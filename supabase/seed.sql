@@ -1,0 +1,3 @@
+-- Datos de desarrollo local (supabase db reset).
+-- app_settings ya se inserta en la migración con los valores reales de Comeco Gráfico.
+-- Los usuarios se crean con: npm run create-admin

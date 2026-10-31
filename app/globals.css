@@ -1,0 +1,147 @@
+@import "tailwindcss";
+
+/* Theme toggle via data-theme on <html>; falls back to the OS preference. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* ---------- Design tokens (docs/PROMPT_app_mensajeria.md §6.2) ---------- */
+:root {
+  --bg: #f6f5f1;
+  --surface: #ffffff;
+  --surface-2: #efede7;
+  --ink: #0b0b0f;
+  --muted: #6b6b72;
+  --line: #e4e2dc;
+  --accent: #2f4bff;
+  --accent-ink: #ffffff;
+  --accent-soft: #e6eaff;
+  --kraft: #c8996a;
+  --tape: #b8895a;
+  --urgent: #ff4d2e;
+  --success: #16a34a;
+  --ring: color-mix(in oklab, var(--accent) 45%, transparent);
+
+  --radius: 12px;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0b0c10;
+    --surface: #14161c;
+    --surface-2: #1b1e26;
+    --ink: #f2f2ee;
+    --muted: #9a9aa3;
+    --line: #24262e;
+    --accent: #5b73ff;
+    --accent-soft: #1b2250;
+    --urgent: #ff6a4f;
+    --success: #22c55e;
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #0b0c10;
+  --surface: #14161c;
+  --surface-2: #1b1e26;
+  --ink: #f2f2ee;
+  --muted: #9a9aa3;
+  --line: #24262e;
+  --accent: #5b73ff;
+  --accent-soft: #1b2250;
+  --urgent: #ff6a4f;
+  --success: #22c55e;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-soft: var(--accent-soft);
+  --color-kraft: var(--kraft);
+  --color-tape: var(--tape);
+  --color-urgent: var(--urgent);
+  --color-success: var(--success);
+  --color-ring: var(--ring);
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: var(--radius);
+  --radius-xl: 14px;
+
+  --text-display: clamp(2.5rem, 6vw, 6rem);
+  --text-display--line-height: 0.95;
+  --text-display--letter-spacing: -0.03em;
+  --text-title: clamp(1.75rem, 3vw, 2.75rem);
+  --text-title--line-height: 1.05;
+  --text-title--letter-spacing: -0.025em;
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+
+  --animate-marquee: marquee 28s linear infinite;
+  --animate-rise: rise 600ms var(--ease-out-expo) both;
+
+  @keyframes marquee {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
+  }
+
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(0.6em);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+@layer base {
+  html {
+    background: var(--bg);
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::selection {
+    background: var(--accent);
+    color: var(--accent-ink);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
