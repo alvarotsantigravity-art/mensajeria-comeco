@@ -21,7 +21,7 @@ export function ChoiceGroup({
   const errorId = `${name}-error`;
   return (
     <fieldset className={cn("grid gap-2", className)} aria-describedby={error ? errorId : undefined}>
-      <legend className="mb-2 text-[13px] font-medium tracking-tight text-ink">{legend}</legend>
+      <legend className="mb-2 text-[12px] font-medium tracking-tight text-ink">{legend}</legend>
       <div className="grid gap-2">
         {options.map((option) => (
           <label
@@ -49,7 +49,7 @@ export function ChoiceGroup({
         ))}
       </div>
       {error ? (
-        <p id={errorId} role="alert" className="text-[13px] text-urgent">
+        <p id={errorId} role="alert" className="text-[12px] text-urgent">
           {error}
         </p>
       ) : null}

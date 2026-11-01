@@ -289,7 +289,7 @@ function CandidateCard({
                   value
                 )}
                 {source ? (
-                  <a href={`#fuente-${source.n}`} className="ml-1.5 align-super font-mono text-[10px] text-accent" title={source.title}>
+                  <a href={`#fuente-${source.n}`} className="ml-1.5 align-super font-mono text-[9px] text-accent" title={source.title}>
                     [{source.n}]
                   </a>
                 ) : null}
@@ -346,7 +346,7 @@ function Cited({ text, sources }: { text: string; sources: SearchSource[] }) {
     const source = n ? sources.find((s) => s.n === Number(n)) : undefined;
     if (!source) return <Fragment key={i}>{part}</Fragment>;
     return (
-      <a key={i} href={source.url} target="_blank" rel="noopener noreferrer" title={source.title} className="mx-0.5 inline-flex items-center rounded bg-accent-soft px-1 align-baseline font-mono text-[11px] text-accent hover:underline">
+      <a key={i} href={source.url} target="_blank" rel="noopener noreferrer" title={source.title} className="mx-0.5 inline-flex items-center rounded bg-accent-soft px-1 align-baseline font-mono text-[10px] text-accent hover:underline">
         {source.n}
         <ExternalLink className="ml-0.5 size-2.5" aria-hidden />
       </a>

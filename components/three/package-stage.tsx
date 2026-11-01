@@ -99,7 +99,7 @@ export function PackageStage({
           return (
             <li key={label} className="grid gap-1.5">
               <span className={cn("h-1 rounded-full transition-colors duration-500", done ? "bg-accent" : "bg-line")} />
-              <span className={cn("text-[11px] sm:text-xs", done ? "text-ink" : "text-muted")}>{label}</span>
+              <span className={cn("text-[10px] sm:text-xs", done ? "text-ink" : "text-muted")}>{label}</span>
             </li>
           );
         })}

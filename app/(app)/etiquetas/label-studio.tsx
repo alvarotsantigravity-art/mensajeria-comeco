@@ -136,11 +136,11 @@ export function LabelStudio({
                       )}
                     >
                       {used ? (
-                        <span className="absolute inset-0 grid place-items-center font-mono text-[10px] text-black/40">ya usada</span>
+                        <span className="absolute inset-0 grid place-items-center font-mono text-[9px] text-black/40">ya usada</span>
                       ) : label ? (
                         <MiniLabel label={label} format={format} />
                       ) : null}
-                      <span className="absolute top-1 right-1.5 font-mono text-[9px] text-black/30">{i + 1}</span>
+                      <span className="absolute top-1 right-1.5 font-mono text-[8px] text-black/30">{i + 1}</span>
                     </button>
                   );
                 })}
@@ -159,7 +159,7 @@ export function LabelStudio({
       {/* Controles */}
       <aside className="grid content-start gap-8 lg:sticky lg:top-24">
         <fieldset className="grid gap-2">
-          <legend className="mb-2 text-[13px] font-medium tracking-tight">Formato A4</legend>
+          <legend className="mb-2 text-[12px] font-medium tracking-tight">Formato A4</legend>
           {FORMAT_KEYS.map((key) => (
             <label
               key={key}
@@ -204,7 +204,7 @@ export function LabelStudio({
         </div>
 
         <fieldset className="grid gap-2.5">
-          <legend className="mb-2 text-[13px] font-medium tracking-tight">Distintivos</legend>
+          <legend className="mb-2 text-[12px] font-medium tracking-tight">Distintivos</legend>
           {(
             [
               ["URGENTE", urgent, setUrgent],

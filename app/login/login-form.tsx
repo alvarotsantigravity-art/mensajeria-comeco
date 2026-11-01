@@ -54,7 +54,7 @@ export function LoginForm({ next, inactive }: { next: string; inactive: boolean 
         Entrar
       </Button>
 
-      <p className="text-[13px] text-muted">
+      <p className="text-[12px] text-muted">
         ¿No tienes cuenta o has olvidado la contraseña? Pídesela al administrador.
       </p>
     </form>
