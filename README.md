@@ -15,7 +15,7 @@ imprimir etiquetas. Especificación completa: [docs/PROMPT_app_mensajeria.md](do
 | 3. Formulario + correo | ✅ Hecha |
 | 4. Escena 3D | ✅ Integrada en el editor (pestañas Paquete / Correo); laboratorio en `/lab/package` |
 | 5. Libreta + historial | ✅ Libreta (buscar, favoritos, fusionar), historial con filtros y CSV, repetir envío, plantillas, autocompletado |
-| 6. Buscador IA | ✅ Código listo (Tavily + Gemini → Groq, caché 30 días, cuota diaria, fuentes citadas). Falta poner las claves para probarlo en real |
+| 6. Buscador IA | ✅ En producción (Tavily + Gemini → Groq, caché 30 días, cuota diaria, fuentes citadas). Probado en real con Groq |
 | 7. Etiquetas | ✅ PDF A4 (1, 2, 4 y 8 por hoja), bultos N/N, posición inicial, QR, distintivos, calibración en mm. Falta la prueba en una hoja Apli real |
 | 8. Despliegue | ✅ En producción: https://mensajeria-comeco.vercel.app (Lighthouse `/login` móvil: rendimiento 97, accesibilidad 100). Falta la prueba de un compañero |
 
@@ -62,7 +62,7 @@ gratuitos (Vercel Hobby + Supabase Free).
    | `ALLOWED_EMAIL_DOMAINS` | `comecografico.com` |
    | `NEXT_PUBLIC_APP_URL` | `https://<app>.vercel.app` |
    | `TAVILY_API_KEY` · `GEMINI_API_KEY` · `GROQ_API_KEY` | Buscador. Marca *Sensitive* |
-   | `GEMINI_MODEL` · `GROQ_MODEL` | Opcionales (por defecto `gemini-2.5-flash` y `llama-3.3-70b-versatile`) |
+   | `GEMINI_MODEL` · `GROQ_MODEL` | Opcionales (por defecto `gemini-3.8-flash` y `openai/gpt-oss-120b`) |
 
 4. **Deploy**. A partir de aquí, cada push a `main` publica producción y cada rama genera una *preview*.
 5. **Supabase → Authentication → URL Configuration**:
@@ -85,7 +85,7 @@ accesibilidad 100. Con el antivirus inyectando su script en `localhost` el rendi
 1. **Caché**: la misma consulta (sin tildes, mayúsculas ni signos) en los últimos 30 días no gasta cuota.
 2. **Tavily** (búsqueda básica). Solo si los fragmentos no traen ni CP ni teléfono, se pide el texto completo de las páginas.
 3. **Gemini** extrae un JSON estricto; si falla, **Groq**. Modelos configurables con `GEMINI_MODEL` / `GROQ_MODEL`
-   (por defecto `gemini-2.5-flash` y `llama-3.3-70b-versatile`).
+   (por defecto `gemini-3.8-flash` y `openai/gpt-oss-120b`).
 4. **Verificación**: los teléfonos, CP y emails que no aparezcan literalmente en los resultados se descartan, y solo se
    aceptan fuentes que estén entre las URLs consultadas.
 5. Límites: `search_daily_limit` por usuario y día (Configuración) y 6 búsquedas por minuto.

@@ -3,8 +3,8 @@ import { parseExtraction, type Extraction } from "./schema";
 
 export type LlmProvider = "gemini" | "groq";
 
-const GEMINI_DEFAULT = "gemini-2.5-flash";
-const GROQ_DEFAULT = "llama-3.3-70b-versatile";
+const GEMINI_DEFAULT = "gemini-3.8-flash";
+const GROQ_DEFAULT = "openai/gpt-oss-120b";
 
 async function gemini(system: string, user: string): Promise<string> {
   const key = process.env.GEMINI_API_KEY;

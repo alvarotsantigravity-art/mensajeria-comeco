@@ -209,12 +209,27 @@ export function RequestEditor({
       authuser: gmailAccount,
     };
     const fullBody = buildEmailBody(snapshot);
-    let url = buildGmailUrl({ ...message, body: fullBody });
-    if (url.length > GMAIL_URL_LIMIT) {
-      // URL demasiado larga: Gmail se abre sin cuerpo y el texto va al portapapeles.
-      await navigator.clipboard.writeText(fullBody).catch(() => undefined);
+    // El enlace de Gmail solo admite texto plano: para que el cuerpo salga como
+    // tabla, se copia en HTML y Gmail se abre con Para/CC/Asunto y el cuerpo vacío.
+    // La activación del clic dura unos segundos, así que el window.open sigue permitido.
+    let url: string;
+    try {
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          "text/html": new Blob([buildEmailHtml(snapshot)], { type: "text/html" }),
+          "text/plain": new Blob([fullBody], { type: "text/plain" }),
+        }),
+      ]);
       url = buildGmailUrl(message);
-      toast.info("El correo es largo: lo he copiado. Pégalo en Gmail con Ctrl+V.");
+      toast.info("Correo copiado como tabla: en Gmail, pulsa Ctrl+V en el cuerpo.", { duration: 10000 });
+    } catch {
+      // Sin portapapeles HTML: el texto va en el enlace (o copiado, si es muy largo).
+      url = buildGmailUrl({ ...message, body: fullBody });
+      if (url.length > GMAIL_URL_LIMIT) {
+        await navigator.clipboard.writeText(fullBody).catch(() => undefined);
+        url = buildGmailUrl(message);
+        toast.info("El correo es largo: lo he copiado. Pégalo en Gmail con Ctrl+V.");
+      }
     }
     window.open(url, "_blank", "noopener,noreferrer");
 
