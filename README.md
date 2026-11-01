@@ -10,8 +10,8 @@ imprimir etiquetas. Especificación completa: [docs/PROMPT_app_mensajeria.md](do
 
 | Fase | Estado |
 |---|---|
-| 1. Base + design system | ✅ Hecha (pendiente de conectar Supabase) |
-| 2. Base de datos | Pendiente |
+| 1. Base + design system | ✅ Hecha |
+| 2. Base de datos | ✅ Hecha (RLS probadas: `npm run test:rls`) |
 | 3. Formulario + correo | Pendiente |
 | 4. Escena 3D | Pendiente |
 | 5. Libreta + historial | Pendiente |
@@ -47,6 +47,20 @@ imprimir etiquetas. Especificación completa: [docs/PROMPT_app_mensajeria.md](do
 - Solo se admiten cuentas `@comecografico.com` (se valida en el servidor y en la base de datos).
 - ¿Contraseña olvidada? El admin la restablece desde la misma pantalla.
 
+## Base de datos
+
+| Tabla | Para qué | Quién escribe |
+|---|---|---|
+| `profiles` | Datos del solicitante, rol y estado | Cada uno lo suyo; el admin, todo |
+| `app_settings` | Configuración global (Para/CC, remitente, CECO, cuotas) | Solo admin |
+| `recipients` | Libreta de direcciones compartida | Cualquier usuario; borra su creador o el admin |
+| `shipment_requests` | Solicitudes con referencia `MSJ-AAAA-0001` y copia del destino | Su creador o el admin |
+| `request_templates` | Plantillas de envíos frecuentes | Su creador o el admin |
+| `company_search_cache` / `search_usage` | Caché (30 días) y cuota del buscador | Solo el servidor |
+
+Todos leen el historial y la libreta; sin sesión o con la cuenta desactivada no se lee nada.
+`supabase/seed.sql` (destinatarios ficticios) solo se usa en local con `supabase db reset`.
+
 ## Scripts
 
 | Script | Qué hace |
@@ -56,6 +70,8 @@ imprimir etiquetas. Especificación completa: [docs/PROMPT_app_mensajeria.md](do
 | `npm run lint` / `npm run typecheck` | ESLint / TypeScript |
 | `npm run create-admin -- <email> "<nombre>"` | Crea un usuario con contraseña temporal |
 | `npm run db:push` | Aplica las migraciones de `supabase/migrations` |
+| `npm run db:types` | Regenera `lib/supabase/database.types.ts` desde la BD |
+| `npm run test:rls` | Prueba las políticas RLS con dos usuarios temporales (se borran al terminar) |
 
 ## Rutas
 

@@ -9,7 +9,9 @@
     "lint": "eslint",
     "create-admin": "node --env-file=.env.local scripts/create-admin.mjs",
     "typecheck": "tsc --noEmit",
-    "db:push": "supabase db push"
+    "db:push": "supabase db push",
+    "db:types": "supabase gen types typescript --linked --schema public > lib/supabase/database.types.ts",
+    "test:rls": "node --env-file=.env.local --test tests/rls/rls.test.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^7.0.0",
