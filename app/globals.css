@@ -89,6 +89,29 @@
 
   --animate-marquee: marquee 28s linear infinite;
   --animate-rise: rise 600ms var(--ease-out-expo) both;
+  --animate-fade-in: fade-in 200ms ease-out both;
+  --animate-sheet-in: sheet-in 300ms var(--ease-out-expo) both;
+  --animate-flash: flash 700ms ease-out;
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @keyframes sheet-in {
+    from {
+      transform: translateX(100%);
+    }
+  }
+
+  /* Destello del acento al rellenar un campo desde el buscador (§6.5). */
+  @keyframes flash {
+    from {
+      box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 45%, transparent);
+      background-color: var(--accent-soft);
+    }
+  }
 
   @keyframes marquee {
     from {

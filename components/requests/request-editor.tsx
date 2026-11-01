@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useForm, useWatch, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Bookmark, Check, ClipboardCopy, Cloud, CloudOff, LoaderCircle, Mail, Save, Sparkles, Table2, X } from "lucide-react";
+import { Bookmark, Check, ClipboardCopy, Cloud, CloudOff, Globe, LoaderCircle, Mail, Save, Sparkles, Table2, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
@@ -14,6 +14,8 @@ import { EmailPreview } from "@/components/requests/email-preview";
 import { BLOCKS, ProgressSteps } from "@/components/requests/progress-steps";
 import { PackageStage } from "@/components/three/package-stage";
 import { RecipientCombobox } from "@/components/requests/recipient-combobox";
+import { CompanySearchSheet } from "@/components/search/company-search-sheet";
+import type { Candidate, CandidateField } from "@/lib/search/schema";
 import type { PackageVariant, ScenePart } from "@/components/three/scene-params";
 import { useShipmentProgress } from "@/hooks/use-shipment-progress";
 import { buildEmailBody, buildSubject } from "@/lib/email/build-body";
@@ -63,6 +65,7 @@ export function RequestEditor({
   settings,
   gmailAccount,
   readOnly = false,
+  openSearch = false,
 }: {
   initialId: string | null;
   initialRef: string | null;
@@ -71,6 +74,8 @@ export function RequestEditor({
   settings: EditorSettings;
   gmailAccount: string;
   readOnly?: boolean;
+  /** Abre el buscador al entrar (acceso desde Inicio). */
+  openSearch?: boolean;
 }) {
   const form = useForm<RequestFormValues>({
     defaultValues: initialValues,
@@ -247,6 +252,58 @@ export function RequestEditor({
     toast.success(`Destino: ${option.company_name}`);
   }
 
+  // Buscador de empresas (§5.3): botón en Destino y Ctrl+K.
+  const [searchOpen, setSearchOpen] = useState(openSearch && !readOnly);  useEffect(() => {
+    if (readOnly) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key.toLowerCase() === "k" && (event.ctrlKey || event.metaKey)) {
+        event.preventDefault();
+        setSearchOpen(true);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [readOnly]);
+
+  /** Rellena en cascada (40 ms) con un destello del acento (§6.5). */
+  function fillDestination(entries: [DestField, string][]) {
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    entries.forEach(([name, value], i) => {
+      const apply = () => {
+        setValue(name, value, { shouldDirty: true, shouldValidate: formState.isSubmitted });
+        if (!reduced) {
+          const el = document.getElementById(name);
+          el?.classList.remove("animate-flash");
+          void el?.offsetWidth;
+          el?.classList.add("animate-flash");
+        }
+      };
+      if (reduced) apply();
+      else setTimeout(apply, i * 40);
+    });
+  }
+
+  function applySearchCandidate(candidate: Candidate, companyName: string) {
+    const entries: [DestField, string][] = [["dest_company", companyName]];
+    for (const [field, name] of Object.entries(SEARCH_FIELD_MAP) as [CandidateField, DestField][]) {
+      entries.push([name, candidate[field] ?? (name === "dest_country" ? getValues("dest_country") : "")]);
+    }
+    // Es un destino nuevo: se desvincula de la libreta y se propone guardarlo.
+    setValue("recipient_id", null, { shouldDirty: true });
+    setValue("save_recipient", true, { shouldDirty: true });
+    setSearchOpen(false);
+    fillDestination(entries);
+    document.getElementById(BLOCKS[2].anchor)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    toast.success(`Destino: ${companyName}. Verifica los datos antes de enviar.`);
+  }
+
+  function applySearchField(field: CandidateField, value: string) {
+    const name = SEARCH_FIELD_MAP[field];
+    if (!name) return;
+    fillDestination([[name, value]]);
+    toast.success(`Campo rellenado: ${value}`);
+  }
+
   function clearRecipient() {
     setValue("recipient_id", null, { shouldDirty: true });
     setValue("save_recipient", true, { shouldDirty: true });
@@ -361,7 +418,18 @@ export function RequestEditor({
             )}
           >
             <SectionHeading index="03" title="Destino" />
-            {!readOnly ? <RecipientCombobox onSelect={selectRecipient} /> : null}
+            {!readOnly ? (
+              <div className="grid gap-2">
+                <RecipientCombobox onSelect={selectRecipient} />
+                <div className="flex flex-wrap items-center gap-3 text-sm text-muted">
+                  <span>¿No está en la libreta?</span>
+                  <Button type="button" variant="outline" size="sm" onClick={() => setSearchOpen(true)}>
+                    <Globe /> Buscar empresa en internet
+                  </Button>
+                  <kbd className="hidden font-mono text-xs sm:inline">Ctrl + K</kbd>
+                </div>
+              </div>
+            ) : null}
             {values.recipient_id ? (
               <p className="-mt-2 flex flex-wrap items-center gap-2 text-sm text-muted">
                 <span className="size-1.5 rounded-full bg-success" aria-hidden />
@@ -505,6 +573,17 @@ export function RequestEditor({
           </div>
         </div>
       </aside>
+
+      {/* Fuera del <form>: los eventos del portal suben por el árbol de React. */}
+      {!readOnly ? (
+        <CompanySearchSheet
+          open={searchOpen}
+          onOpenChange={setSearchOpen}
+          initialQuery={[values.dest_company, values.dest_city].filter((s) => s?.trim()).join(" ")}
+          onUse={applySearchCandidate}
+          onUseField={applySearchField}
+        />
+      ) : null}
     </div>
   );
 }
@@ -521,6 +600,19 @@ const DEST_FIELDS = [
   "dest_phone",
   "save_recipient",
 ] as const;
+
+type DestField = keyof (typeof BLOCK_FIELDS)["destination"];
+
+/** Del resultado del buscador al bloque de destino (email y web no tienen hueco). */
+const SEARCH_FIELD_MAP: Partial<Record<CandidateField, DestField>> = {
+  address: "dest_address",
+  postalCode: "dest_postal_code",
+  city: "dest_city",
+  province: "dest_province",
+  country: "dest_country",
+  contactPerson: "dest_contact",
+  phone: "dest_phone",
+};
 
 // Campos de cada bloque, en orden de pantalla (para enfocar el primer error).
 const BLOCK_FIELDS = {

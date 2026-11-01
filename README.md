@@ -15,7 +15,7 @@ imprimir etiquetas. Especificación completa: [docs/PROMPT_app_mensajeria.md](do
 | 3. Formulario + correo | ✅ Hecha |
 | 4. Escena 3D | ✅ Integrada en el editor (pestañas Paquete / Correo); laboratorio en `/lab/package` |
 | 5. Libreta + historial | ✅ Libreta (buscar, favoritos, fusionar), historial con filtros y CSV, repetir envío, plantillas, autocompletado |
-| 6. Buscador IA | Pendiente |
+| 6. Buscador IA | ✅ Código listo (Tavily + Gemini → Groq, caché 30 días, cuota diaria, fuentes citadas). Falta poner las claves para probarlo en real |
 | 7. Etiquetas | Pendiente |
 | 8. Despliegue | Pendiente |
 
@@ -38,6 +38,18 @@ imprimir etiquetas. Especificación completa: [docs/PROMPT_app_mensajeria.md](do
    npm run create-admin -- atubio@comecografico.com "Nombre Apellido"
    ```
 6. Arranca: `npm run dev` → http://localhost:3000
+
+## Buscador de empresas
+
+1. **Caché**: la misma consulta (sin tildes, mayúsculas ni signos) en los últimos 30 días no gasta cuota.
+2. **Tavily** (búsqueda básica). Solo si los fragmentos no traen ni CP ni teléfono, se pide el texto completo de las páginas.
+3. **Gemini** extrae un JSON estricto; si falla, **Groq**. Modelos configurables con `GEMINI_MODEL` / `GROQ_MODEL`
+   (por defecto `gemini-2.5-flash` y `llama-3.3-70b-versatile`).
+4. **Verificación**: los teléfonos, CP y emails que no aparezcan literalmente en los resultados se descartan, y solo se
+   aceptan fuentes que estén entre las URLs consultadas.
+5. Límites: `search_daily_limit` por usuario y día (Configuración) y 6 búsquedas por minuto.
+
+Claves en `.env.local` y en Vercel: `TAVILY_API_KEY`, `GEMINI_API_KEY`, `GROQ_API_KEY` (solo servidor).
 
 ## Cómo funciona el acceso
 
@@ -87,5 +99,6 @@ Todos leen el historial y la libreta; sin sesión o con la cuenta desactivada no
 | `/solicitudes/nueva?repetir=<id>` · `?destinatario=<id>` · `?plantilla=<id>` | Usuarios: empezar desde un envío anterior, la libreta o una plantilla |
 | `/libreta` · `/libreta/<id>` · `/libreta/nuevo` | Usuarios: libreta compartida (borra su creador o el admin; fusionar, cualquiera) |
 | `/historial` · `/historial/exportar` | Usuarios: historial de la oficina con filtros y exportación CSV |
+| `/api/company-search` | Usuarios: buscador de empresas (POST busca; GET devuelve el contador). Desde el formulario: botón en Destino o `Ctrl+K`; desde Inicio: `/solicitudes/nueva?buscar=1` |
 | `/configuracion/usuarios` | Solo admin |
 | `/lab/package` | Usuarios: laboratorio de la escena 3D (etapas y variantes) |

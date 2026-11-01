@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { ArrowRight, BookUser, History, Package, Printer, Search } from "lucide-react";
 import { requireUser } from "@/lib/auth/dal";
 import { listRecentRequests } from "@/lib/requests/data";
+import { getSearchUsage } from "@/lib/search/run";
 import { STATUS_LABEL, URGENCY_SHORT, type Status, type Urgency } from "@/lib/requests/options";
 import { formatRequestDate } from "@/lib/email/build-body";
 import { Badge, Card, Skeleton } from "@/components/ui/misc";
@@ -12,7 +13,7 @@ import { cn } from "@/lib/utils";
 const shortcuts: { icon: typeof Search; title: string; text: string; href?: string; phase?: string }[] = [
   { icon: BookUser, title: "Libreta compartida", text: "Destinatarios de toda la oficina.", href: "/libreta" },
   { icon: History, title: "Historial", text: "Repite un envío en segundos.", href: "/historial" },
-  { icon: Search, title: "Buscador de empresas", text: "Dirección, teléfono y contacto con fuentes.", phase: "Fase 6" },
+  { icon: Search, title: "Buscador de empresas", text: "Dirección, teléfono y contacto con fuentes.", href: "/solicitudes/nueva?buscar=1" },
   { icon: Printer, title: "Etiquetas", text: "PDF A4 para sobres y cajas.", phase: "Fase 7" },
 ];
 
@@ -67,7 +68,21 @@ export default function HomePage() {
           );
         })}
       </section>
+      <Suspense fallback={null}>
+        <SearchCounter />
+      </Suspense>
     </div>
+  );
+}
+
+/** Contador discreto de búsquedas del mes (§6.3). */
+async function SearchCounter() {
+  await requireUser();
+  const usage = await getSearchUsage();
+  return (
+    <p className="-mt-10 font-mono text-xs text-muted">
+      {usage.teamMonth} búsquedas de empresas este mes · tú, {usage.userToday}/{usage.dailyLimit} hoy
+    </p>
   );
 }
 

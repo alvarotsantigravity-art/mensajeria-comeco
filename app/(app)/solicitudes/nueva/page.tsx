@@ -79,6 +79,7 @@ async function NewRequest({ searchParams }: Pick<PageProps<"/solicitudes/nueva">
         initialValues={values}
         settings={toEditorSettings(settings)}
         gmailAccount={profile.email}
+        openSearch={params.buscar === "1"}
       />
     </div>
   );
