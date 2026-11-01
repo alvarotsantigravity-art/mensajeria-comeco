@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "create-admin": "node --env-file=.env.local scripts/create-admin.mjs",
+    "reset-password": "node --env-file=.env.local scripts/reset-password.mjs",
     "typecheck": "tsc --noEmit",
     "db:push": "supabase db push",
     "db:types": "npx supabase gen types typescript --linked --schema public > lib/supabase/database.types.ts",

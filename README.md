@@ -17,7 +17,7 @@ imprimir etiquetas. Especificación completa: [docs/PROMPT_app_mensajeria.md](do
 | 5. Libreta + historial | ✅ Libreta (buscar, favoritos, fusionar), historial con filtros y CSV, repetir envío, plantillas, autocompletado |
 | 6. Buscador IA | ✅ Código listo (Tavily + Gemini → Groq, caché 30 días, cuota diaria, fuentes citadas). Falta poner las claves para probarlo en real |
 | 7. Etiquetas | ✅ PDF A4 (1, 2, 4 y 8 por hoja), bultos N/N, posición inicial, QR, distintivos, calibración en mm. Falta la prueba en una hoja Apli real |
-| 8. Despliegue | 🟡 Código listo (cabeceras de seguridad, contraste AA, guía abajo). Falta crear el repositorio privado, Vercel y las variables |
+| 8. Despliegue | ✅ En producción: https://mensajeria-comeco.vercel.app (Lighthouse `/login` móvil: rendimiento 97, accesibilidad 100). Falta la prueba de un compañero |
 
 ## Puesta en marcha (local)
 
@@ -123,6 +123,7 @@ Todos leen el historial y la libreta; sin sesión o con la cuenta desactivada no
 | `npm run lint` / `npm run typecheck` | ESLint / TypeScript |
 | `npm test` | Pruebas unitarias (correo, validación, sugerencias) |
 | `npm run create-admin -- <email> "<nombre>"` | Crea un usuario con contraseña temporal |
+| `npm run reset-password -- <email>` | Si nadie puede entrar: nueva contraseña temporal para esa cuenta (sale en tu terminal) |
 | `npm run db:push` | Aplica las migraciones de `supabase/migrations` |
 | `npm run db:types` | Regenera `lib/supabase/database.types.ts` desde la BD |
 | `npm run test:rls` | Prueba las políticas RLS con dos usuarios temporales (se borran al terminar) |
