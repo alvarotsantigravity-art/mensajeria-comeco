@@ -8,7 +8,6 @@ import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment
 import gsap from "gsap";
 import { GlobeSticker, ShippingLabel, StackedBoxes, UrgentStamp, Contents } from "./details";
 import { PackageBox, Tape } from "./box";
-import { Vehicle } from "./vehicle";
 import { usePackageTimeline } from "./use-package-timeline";
 import {
   BOX,
@@ -163,7 +162,6 @@ function SceneContent({ stage, variant, jump, onPart, onLabelHover, lowQuality }
       </group>
 
       <StackedBoxes count={variant.shipmentType === "caja" ? variant.boxCount : 1} />
-      <Vehicle transport={variant.transport} onPart={onPart} />
 
       {!lowQuality ? (
         <ContactShadows position={[0, 0.001, 0]} opacity={0.38} scale={12} blur={2.6} far={2.5} resolution={512} color="#5b4630" />

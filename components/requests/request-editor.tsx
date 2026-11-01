@@ -113,13 +113,12 @@ export function RequestEditor({
       boxCount: Math.max(1, Number(values.box_count) || 1),
       urgent: values.urgency === "urgente",
       international: values.scope === "internacional",
-      transport: (values.transport || null) as PackageVariant["transport"],
       labelCompany: values.dest_company,
       labelCity: values.dest_city,
       labelPostalCode: values.dest_postal_code,
       labelRef: ref ?? "",
     }),
-    [values.shipment_type, values.box_count, values.urgency, values.scope, values.transport, values.dest_company, values.dest_city, values.dest_postal_code, ref],
+    [values.shipment_type, values.box_count, values.urgency, values.scope, values.dest_company, values.dest_city, values.dest_postal_code, ref],
   );
   const goToBlock = useCallback((part: ScenePart) => {
     const block = BLOCKS.find((b) => b.key === part);
@@ -596,7 +595,8 @@ export function RequestEditor({
                 variant={variant}
                 onPart={goToBlock}
                 onLabelHover={setLabelHover}
-                className="mx-auto max-w-md rounded-xl border border-line bg-surface p-3"
+                // Sin tarjeta: el canvas es transparente y la caja queda sobre el fondo de la app.
+                className="mx-auto max-w-md"
               />
             ) : null}
           </div>

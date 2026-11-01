@@ -1,5 +1,4 @@
 import { createContext, useContext } from "react";
-import type { Transport } from "@/lib/requests/options";
 
 /**
  * Estado animable de la escena (§6.4). La timeline de GSAP escribe aquí y cada
@@ -52,7 +51,6 @@ export type PackageVariant = {
   boxCount: number;
   urgent: boolean;
   international: boolean;
-  transport: Transport | null;
   labelCompany: string;
   labelCity: string;
   labelPostalCode: string;

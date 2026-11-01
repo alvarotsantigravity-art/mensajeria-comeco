@@ -7,7 +7,6 @@ import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { PackageStage } from "@/components/three/package-stage";
 import { STAGE_LABELS, type PackageVariant, type ScenePart } from "@/components/three/scene-params";
-import { TRANSPORT_EMAIL, TRANSPORTS, type Transport } from "@/lib/requests/options";
 
 const PART_LABEL: Record<ScenePart, string> = {
   requester: "01 Solicitante",
@@ -27,7 +26,6 @@ export function PackageLab() {
     boxCount: 1,
     urgent: true,
     international: false,
-    transport: "moto",
     labelCompany: "Notaría Ejemplo",
     labelCity: "Madrid",
     labelPostalCode: "28009",
@@ -114,18 +112,6 @@ export function PackageLab() {
           </Field>
           <Toggle label="Urgente (sello rojo)" checked={variant.urgent} onChange={(v) => set("urgent", v)} />
           <Toggle label="Internacional (pegatina)" checked={variant.international} onChange={(v) => set("international", v)} />
-          <div className="flex flex-wrap gap-2">
-            {TRANSPORTS.map((t) => (
-              <Button
-                key={t}
-                size="sm"
-                variant={variant.transport === t ? "ink" : "outline"}
-                onClick={() => set("transport", t as Transport)}
-              >
-                {TRANSPORT_EMAIL[t]}
-              </Button>
-            ))}
-          </div>
         </section>
 
         <section className="grid gap-4">
