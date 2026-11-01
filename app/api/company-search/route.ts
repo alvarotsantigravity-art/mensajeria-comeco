@@ -4,6 +4,9 @@ import { requireUser } from "@/lib/auth/dal";
 import { getSearchUsage, runCompanySearch, searchConfigured } from "@/lib/search/run";
 import { searchQuerySchema, type CompanySearchResponse } from "@/lib/search/schema";
 
+// Tavily (hasta 2 llamadas) + Gemini y, si falla, Groq: margen sobre los timeouts de cada uno.
+export const maxDuration = 30;
+
 /** Contador para el panel: búsquedas de hoy, límite y si hay claves. */
 export async function GET() {
   await requireUser();

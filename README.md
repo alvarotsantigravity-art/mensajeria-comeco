@@ -17,7 +17,7 @@ imprimir etiquetas. Especificación completa: [docs/PROMPT_app_mensajeria.md](do
 | 5. Libreta + historial | ✅ Libreta (buscar, favoritos, fusionar), historial con filtros y CSV, repetir envío, plantillas, autocompletado |
 | 6. Buscador IA | ✅ Código listo (Tavily + Gemini → Groq, caché 30 días, cuota diaria, fuentes citadas). Falta poner las claves para probarlo en real |
 | 7. Etiquetas | ✅ PDF A4 (1, 2, 4 y 8 por hoja), bultos N/N, posición inicial, QR, distintivos, calibración en mm. Falta la prueba en una hoja Apli real |
-| 8. Despliegue | Pendiente |
+| 8. Despliegue | 🟡 Código listo (cabeceras de seguridad, contraste AA, guía abajo). Falta crear el repositorio privado, Vercel y las variables |
 
 ## Puesta en marcha (local)
 
@@ -38,6 +38,47 @@ imprimir etiquetas. Especificación completa: [docs/PROMPT_app_mensajeria.md](do
    npm run create-admin -- atubio@comecografico.com "Nombre Apellido"
    ```
 6. Arranca: `npm run dev` → http://localhost:3000
+
+## Despliegue (Vercel + Supabase)
+
+Producción usa el **mismo proyecto de Supabase** que ya tiene las migraciones aplicadas. Todo cabe en los planes
+gratuitos (Vercel Hobby + Supabase Free).
+
+1. **GitHub**: crea un repositorio **privado** vacío (sin README ni .gitignore) y súbelo:
+   ```bash
+   git branch -M main          # la rama con todas las fases
+   git remote add origin https://github.com/<usuario>/<repo>.git
+   git push -u origin main
+   ```
+2. **Vercel** → *Add New → Project* → importa el repositorio. Framework: Next.js (se detecta solo); no cambies los
+   comandos de build.
+3. **Variables de entorno** (Vercel → *Settings → Environment Variables*, entorno *Production* y *Preview*). Los
+   valores son los de `.env.local`; nunca en el código ni en el chat:
+
+   | Variable | Notas |
+   |---|---|
+   | `NEXT_PUBLIC_SUPABASE_URL` · `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase → Project Settings → API |
+   | `SUPABASE_SERVICE_ROLE_KEY` | Solo servidor. Marca *Sensitive* |
+   | `ALLOWED_EMAIL_DOMAINS` | `comecografico.com` |
+   | `NEXT_PUBLIC_APP_URL` | `https://<app>.vercel.app` |
+   | `TAVILY_API_KEY` · `GEMINI_API_KEY` · `GROQ_API_KEY` | Buscador. Marca *Sensitive* |
+   | `GEMINI_MODEL` · `GROQ_MODEL` | Opcionales (por defecto `gemini-2.5-flash` y `llama-3.3-70b-versatile`) |
+
+4. **Deploy**. A partir de aquí, cada push a `main` publica producción y cada rama genera una *preview*.
+5. **Supabase → Authentication → URL Configuration**:
+   - *Site URL*: `https://<app>.vercel.app`
+   - *Redirect URLs*: `https://<app>.vercel.app/**` (y `http://localhost:3000/**` para desarrollo)
+   - Comprueba que siguen **desactivados** *Allow new users to sign up* y *Confirm email*. La app no envía emails:
+     ni registro, ni invitaciones, ni recuperación (las contraseñas las gestiona el admin en Configuración → Usuarios).
+6. **Comprobación**: un compañero entra desde su PC con la contraseña temporal que le da el admin, la cambia y crea
+   una solicitud. Lighthouse (pestaña de incógnito, móvil) en `/login` y `/`.
+
+**Ya preparado en el código:** cabeceras de seguridad (HSTS, `nosniff`, `X-Frame-Options: SAMEORIGIN`,
+`Referrer-Policy`, `Permissions-Policy`), sin cabecera `X-Powered-By`, y 30 s de margen para la función del buscador.
+
+**Lighthouse en local** (build de producción, móvil): `/login` y `/styleguide` dan rendimiento 99–100,
+accesibilidad 100. Con el antivirus inyectando su script en `localhost` el rendimiento baja a ~85–90 y
+*buenas prácticas* marca «sin HTTPS» por ese script; en Vercel no ocurre.
 
 ## Buscador de empresas
 

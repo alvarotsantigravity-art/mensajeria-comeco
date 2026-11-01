@@ -39,7 +39,7 @@ export function ChoiceGroup({
               aria-hidden
               className="grid size-4 shrink-0 place-items-center rounded-full border border-line bg-surface peer-checked:border-accent peer-checked:bg-accent"
             >
-              <Check className="size-3 text-white opacity-0 group-has-[:checked]:opacity-100" strokeWidth={3} />
+              <Check className="size-3 text-accent-ink opacity-0 group-has-[:checked]:opacity-100" strokeWidth={3} />
             </span>
             <span className="grid">
               <span className="font-medium">{option.label}</span>

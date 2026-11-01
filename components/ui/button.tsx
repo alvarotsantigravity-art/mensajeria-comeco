@@ -11,7 +11,7 @@ const buttonVariants = cva(
         ink: "bg-ink text-bg hover:bg-ink/85",
         outline: "border border-line bg-surface text-ink hover:border-ink/40",
         ghost: "text-ink hover:bg-surface-2",
-        danger: "bg-urgent text-white hover:bg-urgent/90",
+        danger: "bg-urgent text-urgent-ink hover:bg-urgent/90",
         link: "rounded-none px-0 text-accent underline-offset-4 hover:underline",
       },
       size: {

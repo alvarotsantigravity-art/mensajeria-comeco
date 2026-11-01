@@ -83,7 +83,7 @@ export function PackageStage({
         ) : null}
         <span
           className={cn(
-            "absolute top-3 right-3 inline-flex items-center gap-1.5 rounded-full bg-success px-3 py-1 text-xs font-medium text-white transition-all duration-500",
+            "absolute top-3 right-3 inline-flex items-center gap-1.5 rounded-full bg-success px-3 py-1 text-xs font-medium text-success-ink transition-all duration-500",
             stage >= 5 ? "translate-y-0 opacity-100" : "-translate-y-2 opacity-0",
           )}
           aria-hidden={stage < 5}

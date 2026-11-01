@@ -16,8 +16,11 @@
   --accent-soft: #e6eaff;
   --kraft: #c8996a;
   --tape: #b8895a;
-  --urgent: #ff4d2e;
-  --success: #16a34a;
+  /* AA (4,5:1): #FF4D2E y #16A34A no llegan a 4,5:1 con texto blanco ni como texto sobre su fondo suave. */
+  --urgent: #b02a14;
+  --urgent-ink: #ffffff;
+  --success: #166534;
+  --success-ink: #ffffff;
   --ring: color-mix(in oklab, var(--accent) 45%, transparent);
 
   --radius: 12px;
@@ -32,10 +35,13 @@
     --ink: #f2f2ee;
     --muted: #9a9aa3;
     --line: #24262e;
-    --accent: #5b73ff;
+    --accent: #7088ff;
+    --accent-ink: #0b0d1a;
     --accent-soft: #1b2250;
     --urgent: #ff6a4f;
+    --urgent-ink: #1a0806;
     --success: #22c55e;
+    --success-ink: #052e16;
     color-scheme: dark;
   }
 }
@@ -47,10 +53,13 @@
   --ink: #f2f2ee;
   --muted: #9a9aa3;
   --line: #24262e;
-  --accent: #5b73ff;
+  --accent: #7088ff;
+  --accent-ink: #0b0d1a;
   --accent-soft: #1b2250;
   --urgent: #ff6a4f;
+  --urgent-ink: #1a0806;
   --success: #22c55e;
+  --success-ink: #052e16;
   color-scheme: dark;
 }
 
@@ -67,7 +76,9 @@
   --color-kraft: var(--kraft);
   --color-tape: var(--tape);
   --color-urgent: var(--urgent);
+  --color-urgent-ink: var(--urgent-ink);
   --color-success: var(--success);
+  --color-success-ink: var(--success-ink);
   --color-ring: var(--ring);
 
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;

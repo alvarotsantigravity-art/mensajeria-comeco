@@ -35,3 +35,6 @@ pnpm-debug.log*
 .DS_Store
 Thumbs.db
 *.pem
+
+# notas locales con datos de acceso: nunca al repositorio
+docs/login.txt

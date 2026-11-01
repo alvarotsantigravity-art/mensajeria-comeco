@@ -43,7 +43,7 @@ export function ProgressSteps({ progress, sent }: { progress: ShipmentProgress; 
                 <span
                   className={cn(
                     "grid size-7 place-items-center rounded-full border font-mono text-xs transition-colors",
-                    done ? "border-accent bg-accent text-white" : "border-line text-muted group-hover:border-ink/30",
+                    done ? "border-accent bg-accent text-accent-ink" : "border-line text-muted group-hover:border-ink/30",
                   )}
                 >
                   {done ? <Check className="size-3.5" strokeWidth={3} aria-label="Completo" /> : block.index}
