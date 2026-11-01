@@ -14,7 +14,7 @@ imprimir etiquetas. Especificación completa: [docs/PROMPT_app_mensajeria.md](do
 | 2. Base de datos | ✅ Hecha (RLS probadas: `npm run test:rls`) |
 | 3. Formulario + correo | ✅ Hecha |
 | 4. Escena 3D | ✅ Integrada en el editor (pestañas Paquete / Correo); laboratorio en `/lab/package` |
-| 5. Libreta + historial | Pendiente |
+| 5. Libreta + historial | ✅ Libreta (buscar, favoritos, fusionar), historial con filtros y CSV, repetir envío, plantillas, autocompletado |
 | 6. Buscador IA | Pendiente |
 | 7. Etiquetas | Pendiente |
 | 8. Despliegue | Pendiente |
@@ -84,5 +84,8 @@ Todos leen el historial y la libreta; sin sesión o con la cuenta desactivada no
 | `/` · `/perfil` | Usuarios |
 | `/solicitudes/nueva` | Usuarios: formulario, vista previa, Gmail y autoguardado |
 | `/solicitudes/<id>` | Usuarios: la edita su autor o el admin; el resto solo la ve |
+| `/solicitudes/nueva?repetir=<id>` · `?destinatario=<id>` · `?plantilla=<id>` | Usuarios: empezar desde un envío anterior, la libreta o una plantilla |
+| `/libreta` · `/libreta/<id>` · `/libreta/nuevo` | Usuarios: libreta compartida (borra su creador o el admin; fusionar, cualquiera) |
+| `/historial` · `/historial/exportar` | Usuarios: historial de la oficina con filtros y exportación CSV |
 | `/configuracion/usuarios` | Solo admin |
 | `/lab/package` | Usuarios: laboratorio de la escena 3D (etapas y variantes) |

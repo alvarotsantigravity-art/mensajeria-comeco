@@ -8,8 +8,8 @@ import { cn } from "@/lib/utils";
 const items = [
   { href: "/", label: "Inicio", ready: true },
   { href: "/solicitudes/nueva", label: "Nueva solicitud", ready: true },
-  { href: "/historial", label: "Historial", ready: false },
-  { href: "/libreta", label: "Libreta", ready: false },
+  { href: "/historial", label: "Historial", ready: true },
+  { href: "/libreta", label: "Libreta", ready: true },
 ] as const;
 
 /** Lee la URL: va dentro de <Suspense> (rutas dinámicas con Cache Components). */

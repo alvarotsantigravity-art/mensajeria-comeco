@@ -443,6 +443,37 @@ export type Database = {
       f_unaccent: { Args: { value: string }; Returns: string }
       is_active_user: { Args: never; Returns: boolean }
       is_admin: { Args: never; Returns: boolean }
+      merge_recipients: {
+        Args: { drop_id: string; keep_id: string }
+        Returns: {
+          address: string | null
+          city: string | null
+          company_name: string
+          contact_person: string | null
+          country: string
+          created_at: string
+          created_by: string | null
+          email: string | null
+          id: string
+          is_favorite: boolean
+          last_used_at: string | null
+          notes: string | null
+          phone: string | null
+          postal_code: string | null
+          province: string | null
+          source_url: string | null
+          updated_at: string
+          updated_by: string | null
+          usage_count: number
+          verified_at: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "recipients"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       recipient_search_text: {
         Args: { city: string; company: string; contact: string }
         Returns: string

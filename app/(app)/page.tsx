@@ -7,13 +7,14 @@ import { STATUS_LABEL, URGENCY_SHORT, type Status, type Urgency } from "@/lib/re
 import { formatRequestDate } from "@/lib/email/build-body";
 import { Badge, Card, Skeleton } from "@/components/ui/misc";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
-const upcoming = [
+const shortcuts: { icon: typeof Search; title: string; text: string; href?: string; phase?: string }[] = [
+  { icon: BookUser, title: "Libreta compartida", text: "Destinatarios de toda la oficina.", href: "/libreta" },
+  { icon: History, title: "Historial", text: "Repite un envío en segundos.", href: "/historial" },
   { icon: Search, title: "Buscador de empresas", text: "Dirección, teléfono y contacto con fuentes.", phase: "Fase 6" },
-  { icon: BookUser, title: "Libreta compartida", text: "Destinatarios de toda la oficina.", phase: "Fase 5" },
-  { icon: History, title: "Historial", text: "Repite un envío en segundos.", phase: "Fase 5" },
   { icon: Printer, title: "Etiquetas", text: "PDF A4 para sobres y cajas.", phase: "Fase 7" },
-] as const;
+];
 
 export default function HomePage() {
   return (
@@ -42,20 +43,29 @@ export default function HomePage() {
       </section>
 
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {upcoming.map(({ icon: Icon, title, text, phase }) => (
-          <Card key={title} className="grid gap-4">
-            <div className="flex items-center justify-between">
-              <span className="grid size-10 place-items-center rounded-full bg-surface-2">
-                <Icon className="size-4" />
-              </span>
-              <Badge>{phase}</Badge>
-            </div>
-            <div className="grid gap-1">
-              <p className="font-semibold">{title}</p>
-              <p className="text-sm text-muted">{text}</p>
-            </div>
-          </Card>
-        ))}
+        {shortcuts.map(({ icon: Icon, title, text, href, phase }) => {
+          const content = (
+            <Card className={cn("grid h-full gap-4", href && "transition-colors group-hover:border-ink/30")}>
+              <div className="flex items-center justify-between">
+                <span className="grid size-10 place-items-center rounded-full bg-surface-2">
+                  <Icon className="size-4" />
+                </span>
+                {phase ? <Badge>{phase}</Badge> : <ArrowRight className="size-4 text-muted transition-transform group-hover:translate-x-0.5" aria-hidden />}
+              </div>
+              <div className="grid gap-1">
+                <p className="font-semibold">{title}</p>
+                <p className="text-sm text-muted">{text}</p>
+              </div>
+            </Card>
+          );
+          return href ? (
+            <Link key={title} href={href} className="group rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-accent">
+              {content}
+            </Link>
+          ) : (
+            <div key={title}>{content}</div>
+          );
+        })}
       </section>
     </div>
   );

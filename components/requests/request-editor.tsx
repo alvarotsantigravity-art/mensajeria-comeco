@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useForm, useWatch, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Check, ClipboardCopy, Cloud, CloudOff, LoaderCircle, Mail, Save, Sparkles, Table2 } from "lucide-react";
+import { Bookmark, Check, ClipboardCopy, Cloud, CloudOff, LoaderCircle, Mail, Save, Sparkles, Table2, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
@@ -13,6 +13,7 @@ import { ChoiceGroup } from "@/components/requests/choice-group";
 import { EmailPreview } from "@/components/requests/email-preview";
 import { BLOCKS, ProgressSteps } from "@/components/requests/progress-steps";
 import { PackageStage } from "@/components/three/package-stage";
+import { RecipientCombobox } from "@/components/requests/recipient-combobox";
 import type { PackageVariant, ScenePart } from "@/components/three/scene-params";
 import { useShipmentProgress } from "@/hooks/use-shipment-progress";
 import { buildEmailBody, buildSubject } from "@/lib/email/build-body";
@@ -34,6 +35,9 @@ import { provinceFromPostalCode } from "@/lib/requests/provinces";
 import { BLOCK_ORDER, parseEmailList, requestSchema, type RequestFormValues } from "@/lib/requests/schema";
 import { getSuggestions } from "@/lib/requests/suggestions";
 import { saveRequest } from "@/app/(app)/solicitudes/actions";
+import { saveTemplate } from "@/app/(app)/solicitudes/template-actions";
+import type { RecipientOption } from "@/app/(app)/libreta/actions";
+import { withRecipient } from "@/lib/requests/prefill";
 import { cn } from "@/lib/utils";
 
 type SaveState = "idle" | "saving" | "saved" | "error";
@@ -234,6 +238,28 @@ export function RequestEditor({
     }
   }
 
+  /** Al elegir un destinatario de la libreta se rellena todo el bloque de destino. */
+  function selectRecipient(option: RecipientOption) {
+    const next = withRecipient(getValues(), option);
+    for (const name of DEST_FIELDS) {
+      setValue(name, next[name], { shouldDirty: true, shouldValidate: formState.isSubmitted });
+    }
+    toast.success(`Destino: ${option.company_name}`);
+  }
+
+  function clearRecipient() {
+    setValue("recipient_id", null, { shouldDirty: true });
+    setValue("save_recipient", true, { shouldDirty: true });
+  }
+
+  async function saveAsTemplate() {
+    const name = window.prompt("Nombre de la plantilla (p. ej. «Documentación a notaría X»):", values.concept || values.dest_company);
+    if (name === null) return;
+    const result = await saveTemplate(name, getValues());
+    if (result.ok) toast.success(result.message);
+    else toast.error(result.message);
+  }
+
   function onPostalCodeBlur() {
     const province = provinceFromPostalCode(getValues("dest_postal_code"));
     if (province && !getValues("dest_province").trim()) {
@@ -335,6 +361,18 @@ export function RequestEditor({
             )}
           >
             <SectionHeading index="03" title="Destino" />
+            {!readOnly ? <RecipientCombobox onSelect={selectRecipient} /> : null}
+            {values.recipient_id ? (
+              <p className="-mt-2 flex flex-wrap items-center gap-2 text-sm text-muted">
+                <span className="size-1.5 rounded-full bg-success" aria-hidden />
+                Destino de la libreta.
+                {!readOnly ? (
+                  <button type="button" onClick={clearRecipient} className="inline-flex items-center gap-1 underline-offset-4 hover:text-ink hover:underline">
+                    <X className="size-3.5" /> Desvincular (guardar como nuevo)
+                  </button>
+                ) : null}
+              </p>
+            ) : null}
             <div className="grid gap-5 sm:grid-cols-6">
               <Field label="Empresa de destino" htmlFor="dest_company" error={err("dest_company")} className="sm:col-span-6">
                 <Input id="dest_company" autoComplete="off" {...register("dest_company")} aria-invalid={Boolean(err("dest_company")) || undefined} />
@@ -420,6 +458,11 @@ export function RequestEditor({
           <Button type="button" variant="ghost" onClick={copyHtml}>
             <Table2 /> Copiar como tabla
           </Button>
+          {!readOnly ? (
+            <Button type="button" variant="ghost" onClick={() => void saveAsTemplate()}>
+              <Bookmark /> Guardar como plantilla
+            </Button>
+          ) : null}
           {!readOnly ? <span className="ml-auto hidden font-mono text-xs text-muted xl:inline">Ctrl + Enter</span> : null}
         </div>
       </form>
@@ -465,6 +508,19 @@ export function RequestEditor({
     </div>
   );
 }
+
+const DEST_FIELDS = [
+  "recipient_id",
+  "dest_company",
+  "dest_address",
+  "dest_postal_code",
+  "dest_city",
+  "dest_province",
+  "dest_country",
+  "dest_contact",
+  "dest_phone",
+  "save_recipient",
+] as const;
 
 // Campos de cada bloque, en orden de pantalla (para enfocar el primer error).
 const BLOCK_FIELDS = {

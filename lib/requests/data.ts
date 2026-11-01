@@ -117,3 +117,17 @@ export async function listRecentRequests(limit = 6): Promise<RecentRequest[]> {
     .limit(limit);
   return data ?? [];
 }
+
+/** "Repetir envío" (§5.5): mismos datos con la fecha de hoy y el solicitante actual. */
+export function repeatValues(row: ShipmentRequestRow, profile: Profile, settings: AppSettings): RequestFormValues {
+  const base = emptyRequestValues(profile, settings);
+  return {
+    ...rowToValues(row),
+    request_date: base.request_date,
+    requester_name: base.requester_name,
+    requester_phone: base.requester_phone,
+    requester_email: base.requester_email,
+    company: base.company,
+    ceco: base.ceco,
+  };
+}

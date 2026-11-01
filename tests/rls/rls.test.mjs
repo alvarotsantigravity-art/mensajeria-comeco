@@ -182,6 +182,39 @@ describe("libreta compartida", () => {
   });
 });
 
+describe("fusionar duplicados", () => {
+  test("merge_recipients reasigna solicitudes ajenas, suma usos y borra el duplicado", async () => {
+    const insert = async (client, fields) => {
+      const { data, error } = await client.from("recipients").insert(fields).select("id").single();
+      assert.ifError(error);
+      recipientIds.push(data.id);
+      return data.id;
+    };
+    const keep = await insert(a.client, { company_name: `Duplicado ${tag}`, city: "Bilbao" });
+    const drop = await insert(b.client, { company_name: `Duplicado ${tag} SL`, phone: "944000000", is_favorite: true });
+    await admin.from("recipients").update({ usage_count: 3 }).eq("id", drop);
+    const { data: req } = await insertRequest(b.client, { recipient_id: drop });
+
+    const { error } = await a.client.rpc("merge_recipients", { keep_id: keep, drop_id: drop });
+    assert.ifError(error);
+
+    const { data: kept } = await admin.from("recipients").select("*").eq("id", keep).single();
+    assert.equal(kept.usage_count, 3);
+    assert.equal(kept.phone, "944000000");
+    assert.equal(kept.city, "Bilbao");
+    assert.equal(kept.is_favorite, true);
+    const { data: gone } = await admin.from("recipients").select("id").eq("id", drop);
+    assert.equal(gone.length, 0);
+    const { data: moved } = await admin.from("shipment_requests").select("recipient_id").eq("id", req.id).single();
+    assert.equal(moved.recipient_id, keep);
+  });
+
+  test("no se fusiona un destinatario consigo mismo", async () => {
+    const { error } = await a.client.rpc("merge_recipients", { keep_id: recipientIds[0], drop_id: recipientIds[0] });
+    assert.ok(error);
+  });
+});
+
 describe("buscador, ajustes y accesos", () => {
   test("los usuarios no escriben en la caché del buscador", async () => {
     const { error } = await a.client
