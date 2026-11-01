@@ -11,7 +11,8 @@
     "typecheck": "tsc --noEmit",
     "db:push": "supabase db push",
     "db:types": "supabase gen types typescript --linked --schema public > lib/supabase/database.types.ts",
-    "test:rls": "node --env-file=.env.local --test tests/rls/rls.test.mjs"
+    "test:rls": "node --env-file=.env.local --test tests/rls/rls.test.mjs",
+    "test": "vitest run"
   },
   "dependencies": {
     "@hookform/resolvers": "^7.0.0",
@@ -34,12 +35,13 @@
   },
   "devDependencies": {
     "@tailwindcss/turbopack": "^4",
-    "@types/node": "^20",
+    "@types/node": "^24.19.2",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.4.3",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^5.0.5"
   }
 }

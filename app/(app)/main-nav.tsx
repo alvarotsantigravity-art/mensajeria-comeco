@@ -7,18 +7,22 @@ import { cn } from "@/lib/utils";
 // Routes for later phases are listed but disabled until they exist.
 const items = [
   { href: "/", label: "Inicio", ready: true },
-  { href: "/solicitudes/nueva", label: "Nueva solicitud", ready: false },
+  { href: "/solicitudes/nueva", label: "Nueva solicitud", ready: true },
   { href: "/historial", label: "Historial", ready: false },
   { href: "/libreta", label: "Libreta", ready: false },
 ] as const;
 
+/** Lee la URL: va dentro de <Suspense> (rutas dinámicas con Cache Components). */
 export function MainNav() {
-  const pathname = usePathname();
+  return <NavLinks pathname={usePathname()} />;
+}
 
+/** Sin ruta activa: fallback estático mientras se resuelve la URL. */
+export function NavLinks({ pathname }: { pathname: string | null }) {
   return (
     <nav aria-label="Principal" className="hidden items-center gap-1 md:flex">
       {items.map((item) => {
-        const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+        const active = pathname !== null && (item.href === "/" ? pathname === "/" : pathname.startsWith(item.href));
         if (!item.ready) {
           return (
             <span

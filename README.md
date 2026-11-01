@@ -12,7 +12,7 @@ imprimir etiquetas. Especificación completa: [docs/PROMPT_app_mensajeria.md](do
 |---|---|
 | 1. Base + design system | ✅ Hecha |
 | 2. Base de datos | ✅ Hecha (RLS probadas: `npm run test:rls`) |
-| 3. Formulario + correo | Pendiente |
+| 3. Formulario + correo | ✅ Hecha |
 | 4. Escena 3D | Pendiente |
 | 5. Libreta + historial | Pendiente |
 | 6. Buscador IA | Pendiente |
@@ -68,6 +68,7 @@ Todos leen el historial y la libreta; sin sesión o con la cuenta desactivada no
 | `npm run dev` | Servidor de desarrollo |
 | `npm run build` | Compilación de producción |
 | `npm run lint` / `npm run typecheck` | ESLint / TypeScript |
+| `npm test` | Pruebas unitarias (correo, validación, sugerencias) |
 | `npm run create-admin -- <email> "<nombre>"` | Crea un usuario con contraseña temporal |
 | `npm run db:push` | Aplica las migraciones de `supabase/migrations` |
 | `npm run db:types` | Regenera `lib/supabase/database.types.ts` desde la BD |
@@ -81,4 +82,6 @@ Todos leen el historial y la libreta; sin sesión o con la cuenta desactivada no
 | `/styleguide` | Público (guía de estilo interna, sin datos) |
 | `/cambiar-contrasena` | Usuario con contraseña temporal |
 | `/` · `/perfil` | Usuarios |
+| `/solicitudes/nueva` | Usuarios: formulario, vista previa, Gmail y autoguardado |
+| `/solicitudes/<id>` | Usuarios: la edita su autor o el admin; el resto solo la ve |
 | `/configuracion/usuarios` | Solo admin |

@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { Package } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Skeleton } from "@/components/ui/misc";
-import { MainNav } from "./main-nav";
+import { MainNav, NavLinks } from "./main-nav";
 import { UserMenu } from "./user-menu";
 
 export default function AppLayout({ children }: LayoutProps<"/">) {
@@ -17,7 +17,9 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
             </span>
             <span className="hidden sm:inline">Mensajería</span>
           </Link>
-          <MainNav />
+          <Suspense fallback={<NavLinks pathname={null} />}>
+            <MainNav />
+          </Suspense>
           <div className="ml-auto flex items-center gap-1">
             <ThemeToggle />
             <Suspense fallback={<Skeleton className="h-9 w-28 rounded-full" />}>
