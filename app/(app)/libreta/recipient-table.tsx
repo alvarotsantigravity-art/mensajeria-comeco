@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { Combine, Pencil, Send, Star, Trash2, X } from "lucide-react";
+import { Combine, Pencil, Printer, Send, Star, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Table, Td, Th } from "@/components/ui/table";
@@ -159,6 +159,11 @@ export function RecipientTable({
                     <Button variant="ghost" size="sm" asChild>
                       <Link href={`/solicitudes/nueva?destinatario=${r.id}`} title="Nueva solicitud a este destino">
                         <Send /> <span className="hidden lg:inline">Enviar</span>
+                      </Link>
+                    </Button>
+                    <Button variant="ghost" size="icon" asChild>
+                      <Link href={`/etiquetas?destinatario=${r.id}`} aria-label={`Etiqueta suelta para ${r.company_name}`} title="Etiqueta suelta">
+                        <Printer />
                       </Link>
                     </Button>
                     <Button variant="ghost" size="icon" asChild>

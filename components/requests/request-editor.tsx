@@ -1,9 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useForm, useWatch, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Bookmark, Check, ClipboardCopy, Cloud, CloudOff, Globe, LoaderCircle, Mail, Save, Sparkles, Table2, X } from "lucide-react";
+import { Bookmark, Check, ClipboardCopy, Cloud, CloudOff, Globe, LoaderCircle, Mail, Printer, Save, Sparkles, Table2, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
@@ -77,6 +78,7 @@ export function RequestEditor({
   /** Abre el buscador al entrar (acceso desde Inicio). */
   openSearch?: boolean;
 }) {
+  const router = useRouter();
   const form = useForm<RequestFormValues>({
     defaultValues: initialValues,
     // El esquema transforma (minúsculas, tipos); aquí solo se usan sus errores.
@@ -309,6 +311,18 @@ export function RequestEditor({
     setValue("save_recipient", true, { shouldDirty: true });
   }
 
+  /** Las etiquetas salen de la solicitud guardada: se guarda antes de ir. */
+  async function printLabels() {
+    if (!readOnly) {
+      if (!idRef.current && !getValues("dest_company").trim()) {
+        toast.error("Rellena el destino antes de imprimir etiquetas.");
+        return;
+      }
+      if (!(await persist(false))) return;
+    }
+    if (idRef.current) router.push(`/etiquetas?solicitud=${idRef.current}`);
+  }
+
   async function saveAsTemplate() {
     const name = window.prompt("Nombre de la plantilla (p. ej. «Documentación a notaría X»):", values.concept || values.dest_company);
     if (name === null) return;
@@ -531,6 +545,9 @@ export function RequestEditor({
               <Bookmark /> Guardar como plantilla
             </Button>
           ) : null}
+          <Button type="button" variant="ghost" onClick={() => void printLabels()}>
+            <Printer /> Imprimir etiquetas
+          </Button>
           {!readOnly ? <span className="ml-auto hidden font-mono text-xs text-muted xl:inline">Ctrl + Enter</span> : null}
         </div>
       </form>

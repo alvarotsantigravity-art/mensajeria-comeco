@@ -10,6 +10,7 @@ const items = [
   { href: "/solicitudes/nueva", label: "Nueva solicitud", ready: true },
   { href: "/historial", label: "Historial", ready: true },
   { href: "/libreta", label: "Libreta", ready: true },
+  { href: "/etiquetas", label: "Etiquetas", ready: true },
 ] as const;
 
 /** Lee la URL: va dentro de <Suspense> (rutas dinámicas con Cache Components). */

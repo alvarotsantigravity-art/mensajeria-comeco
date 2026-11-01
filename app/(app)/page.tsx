@@ -14,7 +14,7 @@ const shortcuts: { icon: typeof Search; title: string; text: string; href?: stri
   { icon: BookUser, title: "Libreta compartida", text: "Destinatarios de toda la oficina.", href: "/libreta" },
   { icon: History, title: "Historial", text: "Repite un envío en segundos.", href: "/historial" },
   { icon: Search, title: "Buscador de empresas", text: "Dirección, teléfono y contacto con fuentes.", href: "/solicitudes/nueva?buscar=1" },
-  { icon: Printer, title: "Etiquetas", text: "PDF A4 para sobres y cajas.", phase: "Fase 7" },
+  { icon: Printer, title: "Etiquetas", text: "PDF A4 para sobres y cajas.", href: "/etiquetas" },
 ];
 
 export default function HomePage() {

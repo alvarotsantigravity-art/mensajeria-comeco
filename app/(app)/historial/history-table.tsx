@@ -2,7 +2,7 @@
 
 import { useTransition } from "react";
 import Link from "next/link";
-import { Repeat2 } from "lucide-react";
+import { Printer, Repeat2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/misc";
@@ -102,6 +102,11 @@ export function HistoryTable({ rows, currentUserId, isAdmin }: { rows: HistoryRo
                 <Button variant="ghost" size="sm" asChild>
                   <Link href={`/solicitudes/nueva?repetir=${r.id}`} title="Nueva solicitud con estos datos y la fecha de hoy">
                     <Repeat2 /> <span className="hidden md:inline">Repetir</span>
+                  </Link>
+                </Button>
+                <Button variant="ghost" size="icon" asChild>
+                  <Link href={`/etiquetas?solicitud=${r.id}`} aria-label={`Etiquetas de ${r.ref}`} title="Imprimir etiquetas">
+                    <Printer />
                   </Link>
                 </Button>
               </Td>

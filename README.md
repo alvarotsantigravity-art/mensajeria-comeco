@@ -16,7 +16,7 @@ imprimir etiquetas. Especificación completa: [docs/PROMPT_app_mensajeria.md](do
 | 4. Escena 3D | ✅ Integrada en el editor (pestañas Paquete / Correo); laboratorio en `/lab/package` |
 | 5. Libreta + historial | ✅ Libreta (buscar, favoritos, fusionar), historial con filtros y CSV, repetir envío, plantillas, autocompletado |
 | 6. Buscador IA | ✅ Código listo (Tavily + Gemini → Groq, caché 30 días, cuota diaria, fuentes citadas). Falta poner las claves para probarlo en real |
-| 7. Etiquetas | Pendiente |
+| 7. Etiquetas | ✅ PDF A4 (1, 2, 4 y 8 por hoja), bultos N/N, posición inicial, QR, distintivos, calibración en mm. Falta la prueba en una hoja Apli real |
 | 8. Despliegue | Pendiente |
 
 ## Puesta en marcha (local)
@@ -100,5 +100,7 @@ Todos leen el historial y la libreta; sin sesión o con la cuenta desactivada no
 | `/libreta` · `/libreta/<id>` · `/libreta/nuevo` | Usuarios: libreta compartida (borra su creador o el admin; fusionar, cualquiera) |
 | `/historial` · `/historial/exportar` | Usuarios: historial de la oficina con filtros y exportación CSV |
 | `/api/company-search` | Usuarios: buscador de empresas (POST busca; GET devuelve el contador). Desde el formulario: botón en Destino o `Ctrl+K`; desde Inicio: `/solicitudes/nueva?buscar=1` |
+| `/etiquetas` · `?solicitud=<id>` · `?destinatario=<id>` | Usuarios: vista previa a escala, imprimir y descargar. Calibración: la ve todo el mundo, la cambia el admin |
+| `/api/labels` | Usuarios: el PDF (mismos parámetros que la pantalla) |
 | `/configuracion/usuarios` | Solo admin |
 | `/lab/package` | Usuarios: laboratorio de la escena 3D (etapas y variantes) |
