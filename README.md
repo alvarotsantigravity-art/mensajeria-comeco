@@ -13,7 +13,7 @@ imprimir etiquetas. Especificación completa: [docs/PROMPT_app_mensajeria.md](do
 | 1. Base + design system | ✅ Hecha |
 | 2. Base de datos | ✅ Hecha (RLS probadas: `npm run test:rls`) |
 | 3. Formulario + correo | ✅ Hecha |
-| 4. Escena 3D | Pendiente |
+| 4. Escena 3D | ✅ Integrada en el editor (pestañas Paquete / Correo); laboratorio en `/lab/package` |
 | 5. Libreta + historial | Pendiente |
 | 6. Buscador IA | Pendiente |
 | 7. Etiquetas | Pendiente |
@@ -85,3 +85,4 @@ Todos leen el historial y la libreta; sin sesión o con la cuenta desactivada no
 | `/solicitudes/nueva` | Usuarios: formulario, vista previa, Gmail y autoguardado |
 | `/solicitudes/<id>` | Usuarios: la edita su autor o el admin; el resto solo la ve |
 | `/configuracion/usuarios` | Solo admin |
+| `/lab/package` | Usuarios: laboratorio de la escena 3D (etapas y variantes) |

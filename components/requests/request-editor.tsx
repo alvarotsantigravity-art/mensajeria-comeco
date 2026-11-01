@@ -12,6 +12,8 @@ import { Badge, SectionHeading } from "@/components/ui/misc";
 import { ChoiceGroup } from "@/components/requests/choice-group";
 import { EmailPreview } from "@/components/requests/email-preview";
 import { BLOCKS, ProgressSteps } from "@/components/requests/progress-steps";
+import { PackageStage } from "@/components/three/package-stage";
+import type { PackageVariant, ScenePart } from "@/components/three/scene-params";
 import { useShipmentProgress } from "@/hooks/use-shipment-progress";
 import { buildEmailBody, buildSubject } from "@/lib/email/build-body";
 import { buildEmailHtml } from "@/lib/email/build-html";
@@ -32,8 +34,10 @@ import { provinceFromPostalCode } from "@/lib/requests/provinces";
 import { BLOCK_ORDER, parseEmailList, requestSchema, type RequestFormValues } from "@/lib/requests/schema";
 import { getSuggestions } from "@/lib/requests/suggestions";
 import { saveRequest } from "@/app/(app)/solicitudes/actions";
+import { cn } from "@/lib/utils";
 
 type SaveState = "idle" | "saving" | "saved" | "error";
+type AsideTab = "paquete" | "correo";
 
 const AUTOSAVE_DELAY = 1200;
 
@@ -88,6 +92,28 @@ export function RequestEditor({
   const body = buildEmailBody(values);
   const suggestions = getSuggestions(values, settings.office_province);
   const sent = status !== "borrador";
+
+  // Escena 3D: avanza con los bloques completos y se precinta al enviar.
+  const [tab, setTab] = useState<AsideTab>("paquete");
+  const [labelHover, setLabelHover] = useState(false);
+  const variant = useMemo<PackageVariant>(
+    () => ({
+      shipmentType: (values.shipment_type || null) as PackageVariant["shipmentType"],
+      boxCount: Math.max(1, Number(values.box_count) || 1),
+      urgent: values.urgency === "urgente",
+      international: values.scope === "internacional",
+      transport: (values.transport || null) as PackageVariant["transport"],
+      labelCompany: values.dest_company,
+      labelCity: values.dest_city,
+      labelPostalCode: values.dest_postal_code,
+      labelRef: ref ?? "",
+    }),
+    [values.shipment_type, values.box_count, values.urgency, values.scope, values.transport, values.dest_company, values.dest_city, values.dest_postal_code, ref],
+  );
+  const goToBlock = useCallback((part: ScenePart) => {
+    const block = BLOCKS.find((b) => b.key === part);
+    document.getElementById(block?.anchor ?? "")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, []);
 
   /** Guardados en serie: nunca dos a la vez (el primero crea la fila y fija el id). */
   const persist = useCallback(
@@ -301,7 +327,13 @@ export function RequestEditor({
           </section>
 
           {/* 03 · Destino */}
-          <section id={BLOCKS[2].anchor} className="grid scroll-mt-24 gap-6">
+          <section
+            id={BLOCKS[2].anchor}
+            className={cn(
+              "-mx-3 grid scroll-mt-24 gap-6 rounded-xl px-3 py-3 ring-1 transition-shadow duration-300",
+              labelHover ? "ring-accent/40" : "ring-transparent",
+            )}
+          >
             <SectionHeading index="03" title="Destino" />
             <div className="grid gap-5 sm:grid-cols-6">
               <Field label="Empresa de destino" htmlFor="dest_company" error={err("dest_company")} className="sm:col-span-6">
@@ -395,8 +427,39 @@ export function RequestEditor({
       <aside className="grid gap-6 self-start lg:sticky lg:top-24" aria-label="Progreso y vista previa">
         <ProgressSteps progress={progress} sent={sent} />
         <div className="grid gap-3">
-          <span className="font-mono text-xs text-muted">Vista previa del correo</span>
-          <EmailPreview to={settings.courier_to} cc={cc} subject={subject} body={body} />
+          <div role="tablist" aria-label="Vista lateral" className="flex gap-1 rounded-lg bg-line/50 p-1 text-sm">
+            {(["paquete", "correo"] as const).map((key) => (
+              <button
+                key={key}
+                type="button"
+                role="tab"
+                id={`tab-${key}`}
+                aria-selected={tab === key}
+                aria-controls={`panel-${key}`}
+                onClick={() => setTab(key)}
+                className={cn(
+                  "flex-1 rounded-md px-3 py-1.5 transition-colors",
+                  tab === key ? "bg-surface font-medium text-ink shadow-sm" : "text-muted hover:text-ink",
+                )}
+              >
+                {key === "paquete" ? "Paquete" : "Correo"}
+              </button>
+            ))}
+          </div>
+          <div role="tabpanel" id="panel-paquete" aria-labelledby="tab-paquete" hidden={tab !== "paquete"}>
+            {tab === "paquete" ? (
+              <PackageStage
+                stage={sent ? 5 : progress.stage}
+                variant={variant}
+                onPart={goToBlock}
+                onLabelHover={setLabelHover}
+                className="mx-auto max-w-md rounded-xl border border-line bg-surface p-3"
+              />
+            ) : null}
+          </div>
+          <div role="tabpanel" id="panel-correo" aria-labelledby="tab-correo" hidden={tab !== "correo"}>
+            <EmailPreview to={settings.courier_to} cc={cc} subject={subject} body={body} />
+          </div>
         </div>
       </aside>
     </div>
