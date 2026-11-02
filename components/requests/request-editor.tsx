@@ -53,7 +53,8 @@ const shipmentTypeOptions = [
 ];
 
 const hasContent = (v: RequestFormValues) =>
-  Boolean(v.concept.trim() || v.description.trim() || v.dest_company.trim() || v.op.trim() || v.product.trim() || v.pickup_company.trim());
+  // La recogida no cuenta: sale rellena con la oficina y crearía borradores vacíos.
+  Boolean(v.concept.trim() || v.description.trim() || v.dest_company.trim() || v.op.trim() || v.product.trim());
 
 /** Sin proveedores cargados (no debería pasar), la mensajería de la configuración. */
 function fallbackCarrier(settings: EditorSettings): Carrier {
@@ -306,7 +307,8 @@ export function RequestEditor({
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key.toLowerCase() === "k" && (event.ctrlKey || event.metaKey)) {
         event.preventDefault();
-        const inPickup = document.activeElement?.closest(`#${BLOCKS[1].anchor}`) && isTransport;
+        const focused = document.activeElement;
+        const inPickup = focused?.id.startsWith("pickup_") || (isTransport && focused?.closest(`#${BLOCKS[1].anchor}`));
         setSearchTarget(inPickup ? "pickup" : "destination");
         setSearchOpen(true);
       }
@@ -451,6 +453,52 @@ export function RequestEditor({
     </Field>
   );
 
+  /** Recogida: la misma en todos los proveedores (libreta, buscador y campos). */
+  const pickupBlock = (
+    <>
+      <h3 className="text-sm font-semibold tracking-tight">Recogida</h3>
+      {!readOnly ? (
+        <div className="grid gap-2">
+          <RecipientCombobox onSelect={selectPickup} label="Origen de la libreta" />
+          <div className="flex flex-wrap items-center gap-3 text-sm text-muted">
+            <span>¿No está en la libreta?</span>
+            <Button type="button" size="sm" onClick={() => openSearchFor("pickup")}>
+              <Globe /> Buscar empresa en internet
+            </Button>
+          </div>
+        </div>
+      ) : null}
+      {values.pickup_recipient_id ? (
+        <p className="-mt-2 flex flex-wrap items-center gap-2 text-sm text-muted">
+          <span className="size-1.5 rounded-full bg-success" aria-hidden />
+          Origen de la libreta.
+          {!readOnly ? (
+            <button
+              type="button"
+              onClick={() => setValue("pickup_recipient_id", null, { shouldDirty: true })}
+              className="inline-flex items-center gap-1 underline-offset-4 hover:text-ink hover:underline"
+            >
+              <X className="size-3.5" /> Desvincular
+            </button>
+          ) : null}
+        </p>
+      ) : null}
+      <div className="grid gap-5 sm:grid-cols-6">
+        {carrier.usesCodes ? textField("pickup_code", "Código de recogida", { className: "sm:col-span-2", mono: true, hint: "Rotomadrid: 178" }) : null}
+        {textField("pickup_company", "Origen de la carga", { className: carrier.usesCodes ? "sm:col-span-4" : "sm:col-span-6" })}
+        {textField("pickup_address", "Dirección", { className: "sm:col-span-6" })}
+        {textField("pickup_postal_code", "Código postal", { className: "sm:col-span-2", mono: true, inputMode: "numeric", onBlur: onPickupPostalCodeBlur })}
+        {textField("pickup_city", "Ciudad", { className: "sm:col-span-4" })}
+        {textField("pickup_province", "Provincia", { className: "sm:col-span-2" })}
+        {textField("pickup_contact", "Contacto", { className: "sm:col-span-2" })}
+        {textField("pickup_phone", "Teléfono", { className: "sm:col-span-2", type: "tel", mono: true })}
+        {textField("pickup_date", "Fecha de recogida", { className: "sm:col-span-3", type: "date", mono: true })}
+        {textField("pickup_time", "Hora de recogida", { className: "sm:col-span-3", type: "time", mono: true, hint: "Opcional" })}
+        {textField("pickup_notes", "Otros (recogida)", { className: "sm:col-span-6" })}
+      </div>
+    </>
+  );
+
   return (
     <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.82fr)] lg:gap-14">
       <form
@@ -540,51 +588,12 @@ export function RequestEditor({
                 {textField("product", "Producto", { className: "sm:col-span-4", hint: "Ej.: INTERIORES XL SEMANAL 2037" })}
                 {textField("concept", "Referencia", { className: "sm:col-span-6", hint: "Opcional. Ej.: DIGITAL · MUESTRAS CAPRABO" })}
               </div>
-              <h3 className="text-sm font-semibold tracking-tight">Recogida</h3>
-              {!readOnly ? (
-                <div className="grid gap-2">
-                  <RecipientCombobox onSelect={selectPickup} label="Origen de la libreta" />
-                  <div className="flex flex-wrap items-center gap-3 text-sm text-muted">
-                    <span>¿No está en la libreta?</span>
-                    <Button type="button" size="sm" onClick={() => openSearchFor("pickup")}>
-                      <Globe /> Buscar empresa en internet
-                    </Button>
-                  </div>
-                </div>
-              ) : null}
-              {values.pickup_recipient_id ? (
-                <p className="-mt-2 flex flex-wrap items-center gap-2 text-sm text-muted">
-                  <span className="size-1.5 rounded-full bg-success" aria-hidden />
-                  Origen de la libreta.
-                  {!readOnly ? (
-                    <button
-                      type="button"
-                      onClick={() => setValue("pickup_recipient_id", null, { shouldDirty: true })}
-                      className="inline-flex items-center gap-1 underline-offset-4 hover:text-ink hover:underline"
-                    >
-                      <X className="size-3.5" /> Desvincular
-                    </button>
-                  ) : null}
-                </p>
-              ) : null}
-              <div className="grid gap-5 sm:grid-cols-6">
-                {carrier.usesCodes ? textField("pickup_code", "Código de recogida", { className: "sm:col-span-2", mono: true, hint: "Rotomadrid: 178" }) : null}
-                {textField("pickup_company", "Origen de la carga", { className: carrier.usesCodes ? "sm:col-span-4" : "sm:col-span-6" })}
-                {textField("pickup_address", "Dirección", { className: "sm:col-span-6" })}
-                {textField("pickup_postal_code", "Código postal", { className: "sm:col-span-2", mono: true, inputMode: "numeric", onBlur: onPickupPostalCodeBlur })}
-                {textField("pickup_city", "Ciudad", { className: "sm:col-span-4" })}
-                {textField("pickup_province", "Provincia", { className: "sm:col-span-2" })}
-                {textField("pickup_contact", "Contacto", { className: "sm:col-span-2" })}
-                {textField("pickup_phone", "Teléfono", { className: "sm:col-span-2", type: "tel", mono: true })}
-                {textField("pickup_date", "Fecha de recogida", { className: "sm:col-span-3", type: "date", mono: true })}
-                {textField("pickup_time", "Hora de recogida", { className: "sm:col-span-3", type: "time", mono: true, hint: "Opcional" })}
-                {textField("pickup_notes", "Otros (recogida)", { className: "sm:col-span-6" })}
-              </div>
+              {pickupBlock}
             </section>
           ) : (
-          /* 02 · Petición */
+          /* 02 · Petición y recogida (mensajería) */
           <section id={BLOCKS[1].anchor} className="grid scroll-mt-24 gap-6">
-            <SectionHeading index="02" title="Petición" />
+            <SectionHeading index="02" title="Petición y recogida" />
             <div className="grid gap-5">
               <Field label="Concepto" htmlFor="concept" error={err("concept")} hint="Ej.: Envío de pruebas de imprenta">
                 <Input id="concept" {...register("concept")} aria-invalid={Boolean(err("concept")) || undefined} />
@@ -607,6 +616,7 @@ export function RequestEditor({
                 ) : null}
               </div>
             </div>
+            {pickupBlock}
           </section>
           )}
 

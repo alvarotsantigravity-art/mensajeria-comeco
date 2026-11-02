@@ -27,7 +27,19 @@ export async function getLabelSource(target: LabelTarget): Promise<(LabelSource 
     if (!r) return null;
     const carrier = await getCarrier(r.carrier);
     const transport = carrier?.formKind === "transporte";
-    // Transporte: una etiqueta por palé; remitente = origen de la carga.
+    // Remitente = origen de la carga (todos los proveedores). Transporte: una etiqueta por palé.
+    const sender = r.pickup_company
+      ? {
+          sender: {
+            name: r.pickup_company,
+            address: r.pickup_address ?? "",
+            postalCode: r.pickup_postal_code ?? "",
+            city: r.pickup_city ?? "",
+            province: r.pickup_province ?? "",
+            phone: r.pickup_phone ?? "",
+          },
+        }
+      : {};
     const pallets = Number.parseInt(r.pallets ?? "", 10);
     const transportExtras = transport
       ? {
@@ -39,18 +51,6 @@ export async function getLabelSource(target: LabelTarget): Promise<(LabelSource 
             .filter(Boolean)
             .join(" · ")
             .slice(0, 140),
-          ...(r.pickup_company
-            ? {
-                sender: {
-                  name: r.pickup_company,
-                  address: r.pickup_address ?? "",
-                  postalCode: r.pickup_postal_code ?? "",
-                  city: r.pickup_city ?? "",
-                  province: r.pickup_province ?? "",
-                  phone: r.pickup_phone ?? "",
-                },
-              }
-            : {}),
         }
       : {};
     return {
@@ -71,6 +71,7 @@ export async function getLabelSource(target: LabelTarget): Promise<(LabelSource 
       urgent: r.urgency === "urgente",
       documentation: r.shipment_type === "documentacion",
       boxCount: r.shipment_type === "caja" ? Math.max(1, r.box_count ?? 1) : 1,
+      ...sender,
       ...transportExtras,
     };
   }

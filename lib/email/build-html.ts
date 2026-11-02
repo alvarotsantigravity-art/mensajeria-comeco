@@ -1,4 +1,4 @@
-import { formatRequestDate, destinationLines, SERVICE_HEADERS, serviceRows, type EmailContent } from "./build-body";
+import { formatRequestDate, destinationLines, pickupLines, SERVICE_HEADERS, serviceRows, type EmailContent } from "./build-body";
 
 // Versión HTML para "Copiar como tabla": mismo contenido que el texto plano,
 // con estilos en línea (Gmail ignora <style>). Todo dato se escapa.
@@ -16,6 +16,7 @@ function row(label: string, value: string) {
 
 export function buildEmailHtml(v: EmailContent): string {
   const dest = destinationLines(v);
+  const pickup = pickupLines(v);
   const table = (rows: string) =>
     `<table style="border-collapse:collapse;font-family:Arial,sans-serif;font-size:13px">${rows}</table>`;
 
@@ -43,6 +44,17 @@ export function buildEmailHtml(v: EmailContent): string {
     table(row("Concepto", v.concept.trim())),
     `<p style="${h}">DESCRIPCIÓN DEL ENVÍO</p>`,
     `<p style="margin:0;white-space:pre-wrap">${escape(v.description.trim())}</p>`,
+    `<p style="${h}">INFORMACIÓN DE RECOGIDA</p>`,
+    table(
+      [
+        row("Dirección completa", pickup.address),
+        row("Ciudad/Código Postal", pickup.city),
+        row("Persona de contacto", pickup.contact),
+        row("Teléfono", pickup.phone),
+        row("Fecha de recogida", pickup.date),
+        ...(pickup.notes ? [row("Otros", pickup.notes)] : []),
+      ].join(""),
+    ),
     `<p style="${h}">INFORMACIÓN DEL DESTINO</p>`,
     table(
       [

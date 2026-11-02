@@ -38,6 +38,16 @@ export type EmailContent = Pick<
   | "transport"
   | "shipment_type"
   | "box_count"
+  | "pickup_company"
+  | "pickup_address"
+  | "pickup_postal_code"
+  | "pickup_city"
+  | "pickup_province"
+  | "pickup_contact"
+  | "pickup_phone"
+  | "pickup_date"
+  | "pickup_time"
+  | "pickup_notes"
 >;
 
 /** "2026-11-01" → "01/11/2026" (sin pasar por Date: evita saltos de zona horaria). */
@@ -89,11 +99,32 @@ function textTable(rows: string[][]): string {
   return rows.map((r) => `| ${r.map((cell, col) => cell.padEnd(widths[col])).join(" | ")} |`).join("\n");
 }
 
+/** Recogida (mensajería): mismas líneas que el destino, más fecha/hora y otros. */
+export function pickupLines(v: EmailContent) {
+  const s = (x?: string) => (x ?? "").trim();
+  const address = [s(v.pickup_company), s(v.pickup_address)].filter(Boolean).join(", ");
+  const cityParts = [s(v.pickup_city), s(v.pickup_postal_code)].filter(Boolean).join(" / ");
+  const region = s(v.pickup_province) && s(v.pickup_province) !== s(v.pickup_city) ? ` (${s(v.pickup_province)})` : "";
+  const time = formatTime(v.pickup_time);
+  return {
+    address,
+    city: cityParts + (cityParts ? region : ""),
+    contact: s(v.pickup_contact),
+    phone: s(v.pickup_phone),
+    date: s(v.pickup_date) ? formatRequestDate(s(v.pickup_date)) + (time ? ` a las ${time}` : "") : "",
+    notes: s(v.pickup_notes),
+  };
+}
+
+/** "Persona de contacto: …" con la columna "Teléfono:" alineada (col. 32), como en la plantilla. */
+function contactLine(contact: string, phone: string) {
+  const left = `Persona de contacto: ${contact}`;
+  return (left.padEnd(Math.max(32, left.length + 4)) + `Teléfono: ${phone}`).trimEnd();
+}
+
 export function buildEmailBody(v: EmailContent): string {
   const dest = destinationLines(v);
-  const contactLeft = `Persona de contacto: ${dest.contact}`;
-  // Columna "Teléfono:" como en la plantilla (col. 32), con al menos 4 espacios de separación.
-  const contactLine = contactLeft.padEnd(Math.max(32, contactLeft.length + 4)) + `Teléfono: ${dest.phone}`;
+  const pickup = pickupLines(v);
 
   return [
     "SOLICITUD DE SERVICIO DE MENSAJERÍA",
@@ -111,10 +142,17 @@ export function buildEmailBody(v: EmailContent): string {
     "DESCRIPCIÓN DEL ENVÍO",
     v.description.trim() || "(Qué se envía, contenido, peso estimado o instrucciones especiales)",
     "",
+    "INFORMACIÓN DE RECOGIDA",
+    `Dirección completa: ${pickup.address}`,
+    `Ciudad/Código Postal: ${pickup.city}`,
+    contactLine(pickup.contact, pickup.phone),
+    `Fecha de recogida: ${pickup.date}`,
+    ...(pickup.notes ? [`Otros: ${pickup.notes}`] : []),
+    "",
     "INFORMACIÓN DEL DESTINO",
     `Dirección completa: ${dest.address}`,
     `Ciudad/Código Postal: ${dest.city}`,
-    contactLine.trimEnd(),
+    contactLine(dest.contact, dest.phone),
     "",
     "PRIORIDAD, ALCANCE Y TIPO DE SERVICIO",
     textTable([SERVICE_HEADERS, ...serviceRows(v)]),

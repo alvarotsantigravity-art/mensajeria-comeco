@@ -74,38 +74,12 @@ function checkPostalCode(v: { dest_country: string; dest_postal_code: string }, 
   }
 }
 
-/** Bloques del formulario (01–04): progreso y escena 3D. */
-export const blockSchemas = {
-  requester: z.object(requesterShape),
-  petition: z.object(petitionShape).superRefine(checkBoxCount),
-  destination: z.object(destinationShape).superRefine(checkPostalCode),
-  service: z.object(serviceShape),
-};
-
-export type BlockKey = keyof typeof blockSchemas;
-export const BLOCK_ORDER: BlockKey[] = ["requester", "petition", "destination", "service"];
-
-/** Solicitud completa de mensajería: obligatoria para abrir Gmail. */
-export const requestSchema = z
-  .object({ ...requesterShape, ...petitionShape, ...destinationShape, ...serviceShape, ...extrasShape })
-  .superRefine((v, ctx) => {
-    checkBoxCount(v, ctx);
-    checkPostalCode(v, ctx);
-  });
-
-// ---------------------------------------------------------------------------
-// Formulario de transporte (BOYACA, RAFA VENTO, TIPSA…): recogida + entrega + palés.
-// Mismos bloques 01–04 que la mensajería para el progreso y la escena 3D.
-// ---------------------------------------------------------------------------
-
 const TIME = /^$|^([01]\d|2[0-3]):[0-5]\d$/;
 const time = z.string().trim().regex(TIME, "Hora no válida (hh:mm).");
 const date = (message: string) => z.iso.date(message);
 
-export const cargoShape = {
-  op: required("Indica la OP.", 40),
-  product: required("Indica el producto."),
-  concept: text(),
+/** Recogida: la tienen todos los proveedores (en mensajería sale rellena con la oficina). */
+export const pickupShape = {
   pickup_code: text(30),
   pickup_company: required("Indica el origen de la carga."),
   pickup_address: text(),
@@ -117,6 +91,41 @@ export const cargoShape = {
   pickup_date: date("Indica la fecha de recogida."),
   pickup_time: time,
   pickup_notes: text(300),
+};
+
+/** Bloques del formulario (01–04): progreso y escena 3D. */
+export const blockSchemas = {
+  requester: z.object(requesterShape),
+  petition: z.object({ ...petitionShape, ...pickupShape }).superRefine((v, ctx) => {
+    checkBoxCount(v, ctx);
+    checkOptionalPostalCode("pickup")(v, ctx);
+  }),
+  destination: z.object(destinationShape).superRefine(checkPostalCode),
+  service: z.object(serviceShape),
+};
+
+export type BlockKey = keyof typeof blockSchemas;
+export const BLOCK_ORDER: BlockKey[] = ["requester", "petition", "destination", "service"];
+
+/** Solicitud completa de mensajería: obligatoria para abrir Gmail. */
+export const requestSchema = z
+  .object({ ...requesterShape, ...petitionShape, ...pickupShape, ...destinationShape, ...serviceShape, ...extrasShape })
+  .superRefine((v, ctx) => {
+    checkBoxCount(v, ctx);
+    checkOptionalPostalCode("pickup")(v, ctx);
+    checkPostalCode(v, ctx);
+  });
+
+// ---------------------------------------------------------------------------
+// Formulario de transporte (BOYACA, RAFA VENTO, TIPSA…): recogida + entrega + palés.
+// Mismos bloques 01–04 que la mensajería para el progreso y la escena 3D.
+// ---------------------------------------------------------------------------
+
+export const cargoShape = {
+  op: required("Indica la OP.", 40),
+  product: required("Indica el producto."),
+  concept: text(),
+  ...pickupShape,
 };
 
 export const deliveryShape = {

@@ -42,6 +42,14 @@ export function todayInMadrid(): string {
 export function emptyRequestValues(profile: Profile, settings: AppSettings, carrier?: Carrier | null): RequestFormValues {
   return {
     ...EMPTY_TRANSPORT_VALUES,
+    // Recogida por defecto: la oficina, hoy. Se cambia desde la libreta o el buscador.
+    pickup_company: settings.sender_name,
+    pickup_address: settings.sender_address,
+    pickup_postal_code: settings.sender_postal_code,
+    pickup_city: settings.sender_city,
+    pickup_province: settings.sender_province,
+    pickup_phone: settings.sender_phone,
+    pickup_date: todayInMadrid(),
     carrier: carrier?.slug ?? DEFAULT_CARRIER,
     request_date: todayInMadrid(),
     requester_name: profile.full_name,
@@ -156,8 +164,8 @@ export function repeatValues(row: ShipmentRequestRow, profile: Profile, settings
     requester_email: base.requester_email,
     company: base.company,
     ceco: base.ceco,
-    // Las fechas de recogida y entrega son de cada envío.
-    pickup_date: "",
+    // Las fechas de recogida y entrega son de cada envío: recogida hoy, entrega por decidir.
+    pickup_date: base.pickup_date,
     delivery_date: "",
   };
 }
