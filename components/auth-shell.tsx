@@ -1,15 +1,19 @@
 import { DitherCanvas } from "@/components/motion/dither-canvas";
 import { Marquee } from "@/components/motion/marquee";
+import { PackageShowcase } from "@/components/package/package-video";
 
 /** Split hero used by /login and /cambiar-contrasena (§6.3). */
 export function AuthShell({
   eyebrow,
   title,
   children,
+  showcase = false,
 }: {
   eyebrow: string;
   title: React.ReactNode;
   children: React.ReactNode;
+  /** Vídeo de la caja como presentación (solo en pantallas grandes). */
+  showcase?: boolean;
 }) {
   return (
     <main className="relative grid min-h-dvh grid-rows-[1fr_auto] overflow-hidden">
@@ -25,6 +29,7 @@ export function AuthShell({
             Solicitudes de mensajería, libreta de direcciones y etiquetas de Comeco Gráfico, en un
             solo sitio.
           </p>
+          {showcase ? <PackageShowcase className="hidden w-full max-w-xl lg:block" /> : null}
         </div>
         <div className="w-full max-w-md rounded-xl border border-line bg-surface/90 p-6 backdrop-blur sm:p-8 lg:justify-self-end">
           {children}

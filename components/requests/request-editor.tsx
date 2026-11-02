@@ -11,13 +11,11 @@ import { Field } from "@/components/ui/field";
 import { Input, Textarea } from "@/components/ui/input";
 import { Badge, SectionHeading } from "@/components/ui/misc";
 import { ChoiceGroup } from "@/components/requests/choice-group";
-import { EmailPreview } from "@/components/requests/email-preview";
 import { BLOCKS, ProgressSteps, TRANSPORT_TITLES } from "@/components/requests/progress-steps";
-import { PackageStage } from "@/components/three/package-stage";
+import { PackageStage, type PackageVariant } from "@/components/package/package-video";
 import { RecipientCombobox } from "@/components/requests/recipient-combobox";
 import { CompanySearchSheet } from "@/components/search/company-search-sheet";
 import type { Candidate, CandidateField } from "@/lib/search/schema";
-import type { PackageVariant, ScenePart } from "@/components/three/scene-params";
 import { useShipmentProgress } from "@/hooks/use-shipment-progress";
 import { composeEmail } from "@/lib/email/compose";
 import { buildGmailUrl, GMAIL_URL_LIMIT } from "@/lib/email/gmail-url";
@@ -41,10 +39,8 @@ import { saveRequest } from "@/app/(app)/solicitudes/actions";
 import { saveTemplate } from "@/app/(app)/solicitudes/template-actions";
 import type { RecipientOption } from "@/app/(app)/libreta/actions";
 import { withPickup, withRecipient } from "@/lib/requests/prefill";
-import { cn } from "@/lib/utils";
 
 type SaveState = "idle" | "saving" | "saved" | "error";
-type AsideTab = "paquete" | "correo";
 
 const AUTOSAVE_DELAY = 1200;
 
@@ -137,7 +133,7 @@ export function RequestEditor({
   const queue = useRef<Promise<unknown>>(Promise.resolve());
 
   const email = useMemo(() => composeEmail(values, carrier), [values, carrier]);
-  const { cc, subject, text: body } = email;
+  const { subject, text: body } = email;
   const suggestions = isTransport ? [] : getSuggestions(values, settings.office_province);
   const sent = status !== "borrador";
   // En el selector: los activos y, si ya estaba elegido, uno desactivado.
@@ -145,27 +141,9 @@ export function RequestEditor({
     .filter((c) => c.active || c.slug === values.carrier)
     .map((c) => ({ value: c.slug, label: c.name, hint: c.active ? `${c.refPrefix} · ${c.emailTo[0] ?? ""}` : "Desactivado" }));
 
-  // Escena 3D: avanza con los bloques completos y se precinta al enviar. En transporte, un bulto por palé (máx. 6).
-  const [tab, setTab] = useState<AsideTab>("paquete");
-  const [labelHover, setLabelHover] = useState(false);
-  const pallets = Math.min(6, Math.max(1, Number.parseInt(values.pallets, 10) || 1));
-  const variant = useMemo<PackageVariant>(
-    () => ({
-      shipmentType: isTransport ? "caja" : ((values.shipment_type || null) as PackageVariant["shipmentType"]),
-      boxCount: isTransport ? pallets : Math.max(1, Number(values.box_count) || 1),
-      urgent: isTransport ? /urgente/i.test(values.carrier_service) : values.urgency === "urgente",
-      international: isTransport ? !/^espa[ñn]a$/i.test(values.dest_country.trim()) : values.scope === "internacional",
-      labelCompany: values.dest_company,
-      labelCity: values.dest_city,
-      labelPostalCode: values.dest_postal_code,
-      labelRef: ref ?? "",
-    }),
-    [isTransport, pallets, values.shipment_type, values.box_count, values.urgency, values.scope, values.carrier_service, values.dest_country, values.dest_company, values.dest_city, values.dest_postal_code, ref],
-  );
-  const goToBlock = useCallback((part: ScenePart) => {
-    const block = BLOCKS.find((b) => b.key === part);
-    document.getElementById(block?.anchor ?? "")?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, []);
+  // Vídeo de la caja: avanza con los bloques completos y sale de escena al enviar. En transporte, una caja.
+  const boxCount = isTransport ? 1 : Math.max(1, Number(values.box_count) || 1);
+  const variant = useMemo<PackageVariant>(() => ({ boxCount }), [boxCount]);
 
   /** Guardados en serie: nunca dos a la vez (el primero crea la fila y fija el id). */
   const persist = useCallback(
@@ -501,7 +479,7 @@ export function RequestEditor({
                 options={carrierOptions}
                 registration={register("carrier", { onChange: (event) => onCarrierChange(event.target.value) })}
                 error={err("carrier")}
-                optionsClassName="sm:grid-cols-2 xl:grid-cols-4"
+                optionsClassName="sm:grid-cols-2"
               />
             </fieldset>
           </section>
@@ -603,10 +581,7 @@ export function RequestEditor({
           {/* 03 · Destino (en transporte, Entrega) */}
           <section
             id={BLOCKS[2].anchor}
-            className={cn(
-              "-mx-3 grid scroll-mt-24 gap-6 rounded-xl px-3 py-3 ring-1 transition-shadow duration-300",
-              labelHover ? "ring-accent/40" : "ring-transparent",
-            )}
+            className="grid scroll-mt-24 gap-6"
           >
             <SectionHeading index="03" title={isTransport ? "Entrega" : "Destino"} />
             {!readOnly ? (
@@ -614,7 +589,8 @@ export function RequestEditor({
                 <RecipientCombobox onSelect={selectRecipient} />
                 <div className="flex flex-wrap items-center gap-3 text-sm text-muted">
                   <span>¿No está en la libreta?</span>
-                  <Button type="button" variant="outline" size="sm" onClick={() => setSearchOpen(true)}>
+                  {/* Lo más usado de la app: en azul, como «Abrir en Gmail». */}
+                  <Button type="button" size="sm" onClick={() => setSearchOpen(true)}>
                     <Globe /> Buscar empresa en internet
                   </Button>
                   <kbd className="hidden font-mono text-xs sm:inline">Ctrl + K</kbd>
@@ -765,44 +741,10 @@ export function RequestEditor({
         </div>
       </form>
 
-      <aside className="grid gap-6 self-start lg:sticky lg:top-24" aria-label="Progreso y vista previa">
+      <aside className="grid gap-6 self-start lg:sticky lg:top-24" aria-label="Progreso">
         <ProgressSteps progress={progress} sent={sent} titles={isTransport ? TRANSPORT_TITLES : undefined} />
-        <div className="grid gap-3">
-          <div role="tablist" aria-label="Vista lateral" className="flex gap-1 rounded-lg bg-line/50 p-1 text-sm">
-            {(["paquete", "correo"] as const).map((key) => (
-              <button
-                key={key}
-                type="button"
-                role="tab"
-                id={`tab-${key}`}
-                aria-selected={tab === key}
-                aria-controls={`panel-${key}`}
-                onClick={() => setTab(key)}
-                className={cn(
-                  "flex-1 rounded-md px-3 py-1.5 transition-colors",
-                  tab === key ? "bg-surface font-medium text-ink shadow-sm" : "text-muted hover:text-ink",
-                )}
-              >
-                {key === "paquete" ? "Paquete" : "Correo"}
-              </button>
-            ))}
-          </div>
-          <div role="tabpanel" id="panel-paquete" aria-labelledby="tab-paquete" hidden={tab !== "paquete"}>
-            {tab === "paquete" ? (
-              <PackageStage
-                stage={sent ? 5 : progress.stage}
-                variant={variant}
-                onPart={goToBlock}
-                onLabelHover={setLabelHover}
-                // Sin tarjeta: el canvas es transparente y la caja queda sobre el fondo de la app.
-                className="mx-auto max-w-md"
-              />
-            ) : null}
-          </div>
-          <div role="tabpanel" id="panel-correo" aria-labelledby="tab-correo" hidden={tab !== "correo"}>
-            <EmailPreview to={email.to} cc={cc} subject={subject} body={body} />
-          </div>
-        </div>
+        {/* Sin tarjeta ni pestañas: el vídeo de la caja se funde con el fondo de la app. */}
+        <PackageStage stage={sent ? 5 : progress.stage} variant={variant} className="mx-auto w-full max-w-md" />
       </aside>
 
       {/* Fuera del <form>: los eventos del portal suben por el árbol de React. */}

@@ -45,7 +45,7 @@ export function ChoiceGroup({
             </span>
             <span className="grid">
               <span className="font-medium">{option.label}</span>
-              {option.hint ? <span className="text-xs text-muted">{option.hint}</span> : null}
+              {option.hint ? <span className="text-xs break-all text-muted">{option.hint}</span> : null}
             </span>
           </label>
         ))}

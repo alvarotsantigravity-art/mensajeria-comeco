@@ -13,7 +13,7 @@ imprimir etiquetas. Especificación completa: [docs/PROMPT_app_mensajeria.md](do
 | 1. Base + design system | ✅ Hecha |
 | 2. Base de datos | ✅ Hecha (RLS probadas: `npm run test:rls`) |
 | 3. Formulario + correo | ✅ Hecha |
-| 4. Escena 3D | ✅ Integrada en el editor (pestañas Paquete / Correo); laboratorio en `/lab/package` |
+| 4. Caja animada | ✅ Vídeo de la caja (`public/caja/caja.mp4`) que avanza con el formulario en el editor y en bucle en la pantalla de acceso |
 | 5. Libreta + historial | ✅ Libreta (buscar, favoritos, fusionar), historial con filtros y CSV, repetir envío, plantillas, autocompletado |
 | 6. Buscador IA | ✅ En producción (Tavily + Gemini → Groq, caché 30 días, cuota diaria, fuentes citadas). Probado en real con Groq |
 | 7. Etiquetas | ✅ PDF A4 (1, 2, 4 y 8 por hoja), bultos N/N, posición inicial, QR, distintivos, calibración en mm. Falta la prueba en una hoja Apli real |
@@ -164,4 +164,3 @@ Todos leen el historial y la libreta; sin sesión o con la cuenta desactivada no
 | `/api/labels` | Usuarios: el PDF (mismos parámetros que la pantalla) |
 | `/configuracion/usuarios` · `/configuracion/proveedores` | Solo admin |
 | `/solicitudes/nueva?proveedor=<slug>` | Usuarios: empezar con un proveedor elegido (`boyaca`, `rafa-vento`, `tipsa`) |
-| `/lab/package` | Usuarios: laboratorio de la escena 3D (etapas y variantes) |
