@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Alert } from "@/components/ui/misc";
 import type { FormState } from "@/lib/validation/auth";
 
-export function LoginForm({ next, inactive }: { next: string; inactive: boolean }) {
+export function LoginForm({ next, inactive, expired = false }: { next: string; inactive: boolean; expired?: boolean }) {
   const [state, action, pending] = useActionState<FormState, FormData>(signIn, {});
 
   return (
@@ -20,6 +20,7 @@ export function LoginForm({ next, inactive }: { next: string; inactive: boolean 
       </div>
 
       {inactive ? <Alert tone="error">Tu cuenta está desactivada. Habla con el administrador.</Alert> : null}
+      {expired ? <Alert>Tu sesión ha caducado. Vuelve a entrar.</Alert> : null}
       {state.message ? <Alert tone="error">{state.message}</Alert> : null}
 
       <input type="hidden" name="next" value={next} />

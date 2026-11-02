@@ -21,9 +21,14 @@ export type Database = {
           courier_to: string[]
           default_ceco: string
           default_company: string
+          delivery_note_legal: string
+          delivery_note_waste: string
           id: boolean
           initial_admin_email: string
           label_offsets: Json
+          legal_address: string
+          legal_name: string
+          legal_tax_id: string
           office_province: string
           search_daily_limit: number
           sender_address: string
@@ -41,9 +46,14 @@ export type Database = {
           courier_to?: string[]
           default_ceco?: string
           default_company?: string
+          delivery_note_legal?: string
+          delivery_note_waste?: string
           id?: boolean
           initial_admin_email?: string
           label_offsets?: Json
+          legal_address?: string
+          legal_name?: string
+          legal_tax_id?: string
           office_province?: string
           search_daily_limit?: number
           sender_address?: string
@@ -61,9 +71,14 @@ export type Database = {
           courier_to?: string[]
           default_ceco?: string
           default_company?: string
+          delivery_note_legal?: string
+          delivery_note_waste?: string
           id?: boolean
           initial_admin_email?: string
           label_offsets?: Json
+          legal_address?: string
+          legal_name?: string
+          legal_tax_id?: string
           office_province?: string
           search_daily_limit?: number
           sender_address?: string
@@ -157,6 +172,78 @@ export type Database = {
           result?: Json
         }
         Relationships: []
+      }
+      delivery_notes: {
+        Row: {
+          comment: string | null
+          concept: string | null
+          created_at: string
+          created_by: string | null
+          delivery_date: string | null
+          order_number: string | null
+          origin: string | null
+          packages: number | null
+          packages_per_pallet: number | null
+          pallets: number | null
+          quantity: number | null
+          request_id: string
+          transport_mode: string | null
+          unit: string
+          units_per_package: number | null
+          updated_at: string
+        }
+        Insert: {
+          comment?: string | null
+          concept?: string | null
+          created_at?: string
+          created_by?: string | null
+          delivery_date?: string | null
+          order_number?: string | null
+          origin?: string | null
+          packages?: number | null
+          packages_per_pallet?: number | null
+          pallets?: number | null
+          quantity?: number | null
+          request_id: string
+          transport_mode?: string | null
+          unit?: string
+          units_per_package?: number | null
+          updated_at?: string
+        }
+        Update: {
+          comment?: string | null
+          concept?: string | null
+          created_at?: string
+          created_by?: string | null
+          delivery_date?: string | null
+          order_number?: string | null
+          origin?: string | null
+          packages?: number | null
+          packages_per_pallet?: number | null
+          pallets?: number | null
+          quantity?: number | null
+          request_id?: string
+          transport_mode?: string | null
+          unit?: string
+          units_per_package?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "delivery_notes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_notes_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: true
+            referencedRelation: "shipment_requests"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {

@@ -41,6 +41,14 @@ export async function proxy(request: NextRequest) {
     return redirectTo(request, "/login", next === "/" ? undefined : { next });
   }
   if (signedIn && request.nextUrl.pathname.startsWith("/login")) {
+    // La DAL ha rechazado esta sesión: se borran sus cookies y se muestra el acceso.
+    if (request.nextUrl.searchParams.get("sesion") === "caducada") {
+      const clean = NextResponse.next({ request });
+      for (const cookie of request.cookies.getAll()) {
+        if (cookie.name.startsWith("sb-")) clean.cookies.delete(cookie.name);
+      }
+      return clean;
+    }
     return redirectTo(request, "/");
   }
 

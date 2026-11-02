@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { Printer, Repeat2, Trash2, X } from "lucide-react";
+import { FileText, Printer, Repeat2, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/misc";
@@ -190,6 +190,11 @@ export function HistoryTable({
                   <Button variant="ghost" size="icon" asChild>
                     <Link href={`/etiquetas?solicitud=${r.id}`} aria-label={`Etiquetas de ${r.ref}`} title="Imprimir etiquetas">
                       <Printer />
+                    </Link>
+                  </Button>
+                  <Button variant="ghost" size="icon" asChild>
+                    <Link href={`/albaranes?solicitud=${r.id}`} aria-label={`Albarán de ${r.ref}`} title="Imprimir albarán">
+                      <FileText />
                     </Link>
                   </Button>
                 </Td>

@@ -19,5 +19,5 @@ async function LoginParams({ searchParams }: Pick<PageProps<"/login">, "searchPa
   const params = await searchParams;
   const next = typeof params.next === "string" ? params.next : "";
   const inactive = params.error === "inactive";
-  return <LoginForm next={next} inactive={inactive} />;
+  return <LoginForm next={next} inactive={inactive} expired={params.sesion === "caducada"} />;
 }

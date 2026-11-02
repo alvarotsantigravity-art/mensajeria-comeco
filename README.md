@@ -109,6 +109,15 @@ Cada solicitud va a un proveedor (tabla `carriers`, editable en **Configuración
 - Los códigos de BOYACA se guardan en la libreta por dirección (Rotomadrid = 178) y se rellenan al elegirla; el de entrega se escribe a mano la primera vez y se recuerda al enviar.
 - Las etiquetas de transporte salen **una por palé** (A5 por defecto), con el origen de la carga como remitente.
 
+## Albaranes
+
+Calcados del modelo de COMECO INTEGRA S.L.U. (sin logotipo), uno por solicitud y para todos los proveedores:
+
+- Nº Albarán = referencia de la solicitud. Sin valorar.
+- Cada impresión saca **3 hojas A4**: COPIA COMECO, COPIA TRANSPORTISTA y COPIA RECEPTOR, cada una con su casilla marcada.
+- Se rellena con la solicitud (OP, origen, proveedor, fecha de entrega, destino, producto y palés); la cantidad va en ej., cajas o kg, y paquetes y palés se calculan solos.
+- Los datos legales (razón social, N.I.F., dirección, texto de residuos, certificados PEFC/FSC y registro) se editan en **Configuración → Albarán**.
+
 ## Cómo funciona el acceso
 
 - Email y contraseña. **La app no envía emails** (sin SMTP ni DNS).
@@ -127,6 +136,7 @@ Cada solicitud va a un proveedor (tabla `carriers`, editable en **Configuración
 | `recipients` | Libreta de direcciones compartida | Cualquier usuario; borra su creador o el admin |
 | `shipment_requests` | Solicitudes con referencia `MSJ-AAAA-0001` (o el prefijo del proveedor), copia del destino y datos de transporte | Su creador o el admin |
 | `request_templates` | Plantillas de envíos frecuentes | Su creador o el admin |
+| `delivery_notes` | Albarán de cada solicitud (cantidades, paquetes, palés) | Su autor o el admin |
 | `company_search_cache` / `search_usage` | Caché (30 días) y cuota del buscador | Solo el servidor |
 
 Todos leen el historial y la libreta; sin sesión o con la cuenta desactivada no se lee nada.
@@ -162,5 +172,7 @@ Todos leen el historial y la libreta; sin sesión o con la cuenta desactivada no
 | `/api/company-search` | Usuarios: buscador de empresas (POST busca; GET devuelve el contador). Desde el formulario: botón en Destino o `Ctrl+K`; desde Inicio: `/solicitudes/nueva?buscar=1` |
 | `/etiquetas` · `?solicitud=<id>` · `?destinatario=<id>` | Usuarios: vista previa a escala, imprimir y descargar. Calibración: la ve todo el mundo, la cambia el admin |
 | `/api/labels` | Usuarios: el PDF (mismos parámetros que la pantalla) |
-| `/configuracion/usuarios` · `/configuracion/proveedores` | Solo admin |
+| `/configuracion/usuarios` · `/configuracion/proveedores` · `/configuracion/albaran` | Solo admin |
+| `/albaranes` · `?solicitud=<id>` | Usuarios: preparar e imprimir el albarán (lo guarda su autor o el admin) |
+| `/api/albaranes` | Usuarios: el PDF (3 copias; los campos de la pantalla pueden ir en la URL) |
 | `/solicitudes/nueva?proveedor=<slug>` | Usuarios: empezar con un proveedor elegido (`boyaca`, `rafa-vento`, `tipsa`) |

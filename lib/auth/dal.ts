@@ -33,7 +33,9 @@ const getProfile = cache(async (): Promise<Profile> => {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  // La cookie parecía válida (el proxy dejó pasar) pero Supabase la rechaza: sesión
+  // revocada o caducada. El proxy la borra al ver este aviso (si no, /login → / → /login…).
+  if (!user) redirect("/login?sesion=caducada");
 
   const { data: profile } = await supabase
     .from("profiles")

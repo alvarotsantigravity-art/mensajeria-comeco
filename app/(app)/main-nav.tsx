@@ -11,6 +11,7 @@ const items = [
   { href: "/historial", label: "Historial", ready: true },
   { href: "/libreta", label: "Libreta", ready: true },
   { href: "/etiquetas", label: "Etiquetas", ready: true },
+  { href: "/albaranes", label: "Albaranes", ready: true },
 ] as const;
 
 /** Lee la URL: va dentro de <Suspense> (rutas dinámicas con Cache Components). */

@@ -41,3 +41,5 @@ docs/login.txt
 
 # Solicitudes reales de proveedores (datos de terceros): nunca al repositorio
 docs/solicitud *.pdf
+# Modelo de albarán con datos de clientes: nunca al repositorio
+docs/ALBARAN*.pdf

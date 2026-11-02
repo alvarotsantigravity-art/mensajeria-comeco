@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 const LINKS = [
   { href: "/configuracion/usuarios", label: "Usuarios" },
   { href: "/configuracion/proveedores", label: "Proveedores" },
+  { href: "/configuracion/albaran", label: "Albarán" },
 ] as const;
 
 /** Pestañas de Configuración (solo admin). */
