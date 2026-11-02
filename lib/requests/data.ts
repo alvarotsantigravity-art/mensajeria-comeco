@@ -38,18 +38,34 @@ export function todayInMadrid(): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Madrid" }).format(new Date());
 }
 
-/** Formulario vacío. El CC sale del proveedor (por defecto, la mensajería interna). */
-export function emptyRequestValues(profile: Profile, settings: AppSettings, carrier?: Carrier | null): RequestFormValues {
+/**
+ * Recogida por defecto: la oficina de Comeco (lo habitual), con fecha de hoy.
+ * Solo rellena si viene vacía: una recogida elegida a mano o de la libreta se respeta.
+ * Sirve para formularios nuevos, repeticiones, plantillas y borradores antiguos.
+ */
+export function withOfficePickup(values: RequestFormValues, settings: AppSettings): RequestFormValues {
+  if (values.pickup_company.trim()) return values;
   return {
-    ...EMPTY_TRANSPORT_VALUES,
-    // Recogida por defecto: la oficina, hoy. Se cambia desde la libreta o el buscador.
+    ...values,
+    pickup_recipient_id: null,
     pickup_company: settings.sender_name,
     pickup_address: settings.sender_address,
     pickup_postal_code: settings.sender_postal_code,
     pickup_city: settings.sender_city,
     pickup_province: settings.sender_province,
     pickup_phone: settings.sender_phone,
-    pickup_date: todayInMadrid(),
+    pickup_date: values.pickup_date || todayInMadrid(),
+  };
+}
+
+/** Formulario vacío. El CC sale del proveedor (por defecto, la mensajería interna). */
+export function emptyRequestValues(profile: Profile, settings: AppSettings, carrier?: Carrier | null): RequestFormValues {
+  return withOfficePickup(baseRequestValues(profile, settings, carrier), settings);
+}
+
+function baseRequestValues(profile: Profile, settings: AppSettings, carrier?: Carrier | null): RequestFormValues {
+  return {
+    ...EMPTY_TRANSPORT_VALUES,
     carrier: carrier?.slug ?? DEFAULT_CARRIER,
     request_date: todayInMadrid(),
     requester_name: profile.full_name,
@@ -156,7 +172,7 @@ export async function listRecentRequests(limit = 6): Promise<RecentRequest[]> {
 /** "Repetir envío" (§5.5): mismos datos con la fecha de hoy y el solicitante actual. */
 export function repeatValues(row: ShipmentRequestRow, profile: Profile, settings: AppSettings): RequestFormValues {
   const base = emptyRequestValues(profile, settings);
-  return {
+  return withOfficePickup({
     ...rowToValues(row),
     request_date: base.request_date,
     requester_name: base.requester_name,
@@ -167,5 +183,5 @@ export function repeatValues(row: ShipmentRequestRow, profile: Profile, settings
     // Las fechas de recogida y entrega son de cada envío: recogida hoy, entrega por decidir.
     pickup_date: base.pickup_date,
     delivery_date: "",
-  };
+  }, settings);
 }

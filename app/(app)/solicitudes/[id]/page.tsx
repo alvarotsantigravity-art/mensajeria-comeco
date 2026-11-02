@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { requireUser } from "@/lib/auth/dal";
 import { listCarriers } from "@/lib/carriers/data";
-import { getRequest, getSettings, rowToValues, toEditorSettings } from "@/lib/requests/data";
+import { getRequest, getSettings, rowToValues, toEditorSettings, withOfficePickup } from "@/lib/requests/data";
 import type { Status } from "@/lib/requests/options";
 import { RequestEditor } from "@/components/requests/request-editor";
 import { EditorSkeleton } from "@/components/requests/editor-skeleton";
@@ -33,7 +33,8 @@ async function Request({ params }: Pick<PageProps<"/solicitudes/[id]">, "params"
       initialId={request.id}
       initialRef={request.ref}
       initialStatus={request.status as Status}
-      initialValues={rowToValues(request)}
+      // Borrador anterior a la recogida: sale con Comeco. Las enviadas, tal cual se enviaron.
+      initialValues={request.status === "borrador" ? withOfficePickup(rowToValues(request), settings) : rowToValues(request)}
       settings={toEditorSettings(settings)}
       carriers={carriers}
       gmailAccount={profile.email}

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { requireUser } from "@/lib/auth/dal";
 import { listCarriers } from "@/lib/carriers/data";
-import { emptyRequestValues, getRequest, getSettings, repeatValues, toEditorSettings } from "@/lib/requests/data";
+import { emptyRequestValues, getRequest, getSettings, repeatValues, toEditorSettings, withOfficePickup } from "@/lib/requests/data";
 import { withRecipient } from "@/lib/requests/prefill";
 import { applyTemplate, getTemplatePayload, listTemplates } from "@/lib/requests/templates";
 import { getRecipient } from "@/lib/recipients/data";
@@ -47,6 +47,8 @@ async function NewRequest({ searchParams }: Pick<PageProps<"/solicitudes/nueva">
   let values: RequestFormValues = source ? repeatValues(source, profile, settings) : emptyRequestValues(profile, settings, chosen);
   if (payload) values = applyTemplate(values, payload);
   if (recipient) values = withRecipient(values, recipient);
+  // Una plantilla antigua puede traer la recogida vacía: siempre Comeco por defecto.
+  values = withOfficePickup(values, settings);
   const startedFrom = source ? `Repitiendo ${source.ref}` : null;
 
   return (
