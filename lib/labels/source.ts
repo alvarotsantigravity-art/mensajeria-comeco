@@ -1,6 +1,7 @@
 import "server-only";
 import { z } from "zod";
 import { formatRequestDate } from "@/lib/email/build-body";
+import { getCarrier } from "@/lib/carriers/data";
 import { getRequest, getSettings } from "@/lib/requests/data";
 import { getRecipient } from "@/lib/recipients/data";
 import { parseOffsets, type LabelOffsets } from "./layouts";
@@ -24,6 +25,34 @@ export async function getLabelSource(target: LabelTarget): Promise<(LabelSource 
   if (target.kind === "solicitud") {
     const r = await getRequest(target.id);
     if (!r) return null;
+    const carrier = await getCarrier(r.carrier);
+    const transport = carrier?.formKind === "transporte";
+    // Transporte: una etiqueta por palé; remitente = origen de la carga.
+    const pallets = Number.parseInt(r.pallets ?? "", 10);
+    const transportExtras = transport
+      ? {
+          unit: "Palé",
+          boxCount: Math.min(50, Math.max(1, Number.isFinite(pallets) ? pallets : 1)),
+          documentation: false,
+          urgent: /urgente/i.test(r.carrier_service ?? ""),
+          defaultNotes: [r.op, r.product, r.delivery_code ? `Cód. entrega ${r.delivery_code}` : "", carrier?.name]
+            .filter(Boolean)
+            .join(" · ")
+            .slice(0, 140),
+          ...(r.pickup_company
+            ? {
+                sender: {
+                  name: r.pickup_company,
+                  address: r.pickup_address ?? "",
+                  postalCode: r.pickup_postal_code ?? "",
+                  city: r.pickup_city ?? "",
+                  province: r.pickup_province ?? "",
+                  phone: r.pickup_phone ?? "",
+                },
+              }
+            : {}),
+        }
+      : {};
     return {
       title: `${r.ref} · ${r.dest_company || "Sin destino"}`,
       recipient: {
@@ -42,6 +71,7 @@ export async function getLabelSource(target: LabelTarget): Promise<(LabelSource 
       urgent: r.urgency === "urgente",
       documentation: r.shipment_type === "documentacion",
       boxCount: r.shipment_type === "caja" ? Math.max(1, r.box_count ?? 1) : 1,
+      ...transportExtras,
     };
   }
 

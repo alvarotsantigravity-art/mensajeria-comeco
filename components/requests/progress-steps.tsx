@@ -10,8 +10,16 @@ export const BLOCKS: { key: BlockKey; index: string; title: string; anchor: stri
   { key: "service", index: "04", title: "Servicio", anchor: "bloque-servicio" },
 ];
 
+/** Títulos de los bloques del formulario de transporte (mismas anclas). */
+export const TRANSPORT_TITLES: Record<BlockKey, string> = {
+  requester: "Solicitante",
+  petition: "Carga y recogida",
+  destination: "Entrega",
+  service: "Servicio",
+};
+
 /** Navegación 01–04: cada número pasa a ✓ cuando su bloque es válido (§6.3). */
-export function ProgressSteps({ progress, sent }: { progress: ShipmentProgress; sent: boolean }) {
+export function ProgressSteps({ progress, sent, titles }: { progress: ShipmentProgress; sent: boolean; titles?: Record<BlockKey, string> }) {
   return (
     <div className="grid gap-4">
       <div className="flex items-center justify-between text-sm">
@@ -48,7 +56,7 @@ export function ProgressSteps({ progress, sent }: { progress: ShipmentProgress; 
                 >
                   {done ? <Check className="size-3.5" strokeWidth={3} aria-label="Completo" /> : block.index}
                 </span>
-                <span className={done ? "text-ink" : "text-muted"}>{block.title}</span>
+                <span className={done ? "text-ink" : "text-muted"}>{titles?.[block.key] ?? block.title}</span>
               </a>
             </li>
           );

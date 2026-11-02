@@ -4,6 +4,7 @@ import { requireAdmin, type Profile } from "@/lib/auth/dal";
 import { createClient } from "@/lib/supabase/server";
 import { Badge, SectionHeading, Skeleton } from "@/components/ui/misc";
 import { Table, Td, Th } from "@/components/ui/table";
+import { ConfigNav } from "../config-nav";
 import { CreateUserForm, UserRowActions } from "./user-forms";
 
 export const metadata: Metadata = { title: "Usuarios" };
@@ -16,6 +17,7 @@ export default function UsersPage() {
         title="Usuarios"
         description="Da de alta a los compañeros con una contraseña temporal. La app no envía emails: comunícasela tú y se les pedirá cambiarla al entrar."
       />
+      <ConfigNav current="/configuracion/usuarios" />
       <Suspense fallback={<Skeleton className="h-80 w-full" />}>
         <Users />
       </Suspense>

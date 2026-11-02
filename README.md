@@ -92,6 +92,23 @@ accesibilidad 100. Con el antivirus inyectando su script en `localhost` el rendi
 
 Claves en `.env.local` y en Vercel: `TAVILY_API_KEY`, `GEMINI_API_KEY`, `GROQ_API_KEY` (solo servidor).
 
+## Proveedores de transporte
+
+Cada solicitud va a un proveedor (tabla `carriers`, editable en **Configuración → Proveedores**):
+
+| Proveedor | Formulario | Correo | Prefijo |
+|---|---|---|---|
+| Mensajería interna (por defecto) | Mensajería: urgencia, ámbito, bultos | Plantilla de siempre | `MSJ` |
+| BOYACA | Transporte: OP, producto, recogida, entrega, palés, peso; **códigos** de recogida y entrega | Tabla «Solicitud de transporte» | `BOY` |
+| RAFA VENTO | Transporte | Lista corta («Buenos días Rafa,») | `RVE` |
+| TIPSA | Transporte + tipo de servicio (10 H urgente / 14 H) y código de cliente 09211 | Tabla, con cabecera de cliente | `TIP` |
+
+- Para, CC y asunto son de cada proveedor. **Nunca** se admiten correos `@comecografico.com` (lo comprueban la pantalla y la base de datos).
+- El asunto admite marcadores (`{op}`, `{producto}`, `{origen}`, `{dia_recogida}`, …); un tramo entre `[corchetes]` se quita si alguno de sus marcadores está vacío.
+- La referencia lleva el prefijo del proveedor, con su propia numeración por año. Un borrador que cambia de proveedor recibe una referencia nueva.
+- Los códigos de BOYACA se guardan en la libreta por dirección (Rotomadrid = 178) y se rellenan al elegirla; el de entrega se escribe a mano la primera vez y se recuerda al enviar.
+- Las etiquetas de transporte salen **una por palé** (A5 por defecto), con el origen de la carga como remitente.
+
 ## Cómo funciona el acceso
 
 - Email y contraseña. **La app no envía emails** (sin SMTP ni DNS).
@@ -105,9 +122,10 @@ Claves en `.env.local` y en Vercel: `TAVILY_API_KEY`, `GEMINI_API_KEY`, `GROQ_AP
 | Tabla | Para qué | Quién escribe |
 |---|---|---|
 | `profiles` | Datos del solicitante, rol y estado | Cada uno lo suyo; el admin, todo |
-| `app_settings` | Configuración global (Para/CC, remitente, CECO, cuotas) | Solo admin |
+| `app_settings` | Configuración global (remitente, CECO, cuotas) | Solo admin |
+| `carriers` | Proveedores: formulario, Para/CC, asunto, prefijo | Solo admin |
 | `recipients` | Libreta de direcciones compartida | Cualquier usuario; borra su creador o el admin |
-| `shipment_requests` | Solicitudes con referencia `MSJ-AAAA-0001` y copia del destino | Su creador o el admin |
+| `shipment_requests` | Solicitudes con referencia `MSJ-AAAA-0001` (o el prefijo del proveedor), copia del destino y datos de transporte | Su creador o el admin |
 | `request_templates` | Plantillas de envíos frecuentes | Su creador o el admin |
 | `company_search_cache` / `search_usage` | Caché (30 días) y cuota del buscador | Solo el servidor |
 
@@ -144,5 +162,6 @@ Todos leen el historial y la libreta; sin sesión o con la cuenta desactivada no
 | `/api/company-search` | Usuarios: buscador de empresas (POST busca; GET devuelve el contador). Desde el formulario: botón en Destino o `Ctrl+K`; desde Inicio: `/solicitudes/nueva?buscar=1` |
 | `/etiquetas` · `?solicitud=<id>` · `?destinatario=<id>` | Usuarios: vista previa a escala, imprimir y descargar. Calibración: la ve todo el mundo, la cambia el admin |
 | `/api/labels` | Usuarios: el PDF (mismos parámetros que la pantalla) |
-| `/configuracion/usuarios` | Solo admin |
+| `/configuracion/usuarios` · `/configuracion/proveedores` | Solo admin |
+| `/solicitudes/nueva?proveedor=<slug>` | Usuarios: empezar con un proveedor elegido (`boyaca`, `rafa-vento`, `tipsa`) |
 | `/lab/package` | Usuarios: laboratorio de la escena 3D (etapas y variantes) |

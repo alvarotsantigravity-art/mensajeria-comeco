@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { Download } from "lucide-react";
 import { requireUser } from "@/lib/auth/dal";
+import { listCarriers } from "@/lib/carriers/data";
 import { HISTORY_PAGE_SIZE, listHistory, listRequesters, parseHistoryFilters } from "@/lib/requests/history";
 import { STATUS_LABEL, STATUSES, URGENCIES, URGENCY_SHORT } from "@/lib/requests/options";
 import { Button } from "@/components/ui/button";
@@ -30,7 +31,8 @@ async function History({ searchParams }: Pick<PageProps<"/historial">, "searchPa
   const profile = await requireUser();
   const params = await searchParams;
   const filters = parseHistoryFilters(params);
-  const [{ rows, total }, requesters] = await Promise.all([listHistory(filters), listRequesters()]);
+  const [{ rows, total }, requesters, carriers] = await Promise.all([listHistory(filters), listRequesters(), listCarriers()]);
+  const carrierNames = Object.fromEntries(carriers.map((c) => [c.slug, c.name]));
 
   const query = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) if (typeof value === "string" && key !== "pagina") query.set(key, value);
@@ -44,12 +46,17 @@ async function History({ searchParams }: Pick<PageProps<"/historial">, "searchPa
   return (
     <div className="grid gap-6">
       <ListSearch
-        placeholder="Busca por referencia, destino, ciudad, concepto o solicitante…"
+        placeholder="Busca por referencia, OP, producto, destino, ciudad o solicitante…"
         chips={[
           ...STATUSES.map((s) => ({ param: "estado", value: s, label: STATUS_LABEL[s] })),
           ...URGENCIES.map((u) => ({ param: "urgencia", value: u, label: URGENCY_SHORT[u] })),
         ]}
         selects={[
+          {
+            param: "proveedor",
+            label: "Cualquier proveedor",
+            options: carriers.map((c) => ({ value: c.slug, label: c.name })),
+          },
           {
             param: "solicitante",
             label: "Cualquier solicitante",
@@ -74,7 +81,7 @@ async function History({ searchParams }: Pick<PageProps<"/historial">, "searchPa
         </Button>
       </div>
 
-      <HistoryTable rows={rows} currentUserId={profile.id} isAdmin={profile.role === "admin"} />
+      <HistoryTable rows={rows} currentUserId={profile.id} isAdmin={profile.role === "admin"} carrierNames={carrierNames} />
 
       {pages > 1 ? (
         <nav aria-label="Páginas" className="flex items-center justify-center gap-2">

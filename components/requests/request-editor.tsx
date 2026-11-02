@@ -12,16 +12,16 @@ import { Input, Textarea } from "@/components/ui/input";
 import { Badge, SectionHeading } from "@/components/ui/misc";
 import { ChoiceGroup } from "@/components/requests/choice-group";
 import { EmailPreview } from "@/components/requests/email-preview";
-import { BLOCKS, ProgressSteps } from "@/components/requests/progress-steps";
+import { BLOCKS, ProgressSteps, TRANSPORT_TITLES } from "@/components/requests/progress-steps";
 import { PackageStage } from "@/components/three/package-stage";
 import { RecipientCombobox } from "@/components/requests/recipient-combobox";
 import { CompanySearchSheet } from "@/components/search/company-search-sheet";
 import type { Candidate, CandidateField } from "@/lib/search/schema";
 import type { PackageVariant, ScenePart } from "@/components/three/scene-params";
 import { useShipmentProgress } from "@/hooks/use-shipment-progress";
-import { buildEmailBody, buildSubject } from "@/lib/email/build-body";
-import { buildEmailHtml } from "@/lib/email/build-html";
+import { composeEmail } from "@/lib/email/compose";
 import { buildGmailUrl, GMAIL_URL_LIMIT } from "@/lib/email/gmail-url";
+import { DEFAULT_CARRIER, type Carrier } from "@/lib/carriers/types";
 import type { EditorSettings } from "@/lib/requests/data";
 import {
   SCOPE_EMAIL,
@@ -35,12 +35,12 @@ import {
   type Status,
 } from "@/lib/requests/options";
 import { provinceFromPostalCode } from "@/lib/requests/provinces";
-import { BLOCK_ORDER, parseEmailList, requestSchema, type RequestFormValues } from "@/lib/requests/schema";
+import { parseEmailList, requestSchema, schemasFor, type RequestFormValues } from "@/lib/requests/schema";
 import { getSuggestions } from "@/lib/requests/suggestions";
 import { saveRequest } from "@/app/(app)/solicitudes/actions";
 import { saveTemplate } from "@/app/(app)/solicitudes/template-actions";
 import type { RecipientOption } from "@/app/(app)/libreta/actions";
-import { withRecipient } from "@/lib/requests/prefill";
+import { withPickup, withRecipient } from "@/lib/requests/prefill";
 import { cn } from "@/lib/utils";
 
 type SaveState = "idle" | "saving" | "saved" | "error";
@@ -56,7 +56,35 @@ const shipmentTypeOptions = [
   { value: "caja", label: SHIPMENT_TYPE_EMAIL.caja, hint: "Indica cuántas" },
 ];
 
-const hasContent = (v: RequestFormValues) => Boolean(v.concept.trim() || v.description.trim() || v.dest_company.trim());
+const hasContent = (v: RequestFormValues) =>
+  Boolean(v.concept.trim() || v.description.trim() || v.dest_company.trim() || v.op.trim() || v.product.trim() || v.pickup_company.trim());
+
+/** Sin proveedores cargados (no debería pasar), la mensajería de la configuración. */
+function fallbackCarrier(settings: EditorSettings): Carrier {
+  return {
+    slug: DEFAULT_CARRIER,
+    name: "Mensajería interna",
+    formKind: "mensajeria",
+    emailLayout: "mensajeria",
+    refPrefix: "MSJ",
+    emailTo: settings.courier_to,
+    emailCc: settings.courier_cc,
+    subjectTemplate: settings.subject_template,
+    emailIntro: "",
+    greetingName: "",
+    customerCode: "",
+    serviceOptions: [],
+    usesCodes: false,
+    active: true,
+    sortOrder: 0,
+  };
+}
+
+function findCarrier(carriers: Carrier[], slug: string, settings: EditorSettings): Carrier {
+  return carriers.find((c) => c.slug === slug) ?? carriers.find((c) => c.slug === DEFAULT_CARRIER) ?? carriers[0] ?? fallbackCarrier(settings);
+}
+
+const sameList = (a: string[], b: string[]) => a.map((s) => s.toLowerCase()).join(",") === b.map((s) => s.toLowerCase()).join(",");
 
 export function RequestEditor({
   initialId,
@@ -64,6 +92,7 @@ export function RequestEditor({
   initialStatus,
   initialValues,
   settings,
+  carriers,
   gmailAccount,
   readOnly = false,
   openSearch = false,
@@ -73,6 +102,8 @@ export function RequestEditor({
   initialStatus: Status;
   initialValues: RequestFormValues;
   settings: EditorSettings;
+  /** Proveedores de transporte (activos e inactivos: una solicitud antigua puede usar uno inactivo). */
+  carriers: Carrier[];
   gmailAccount: string;
   readOnly?: boolean;
   /** Abre el buscador al entrar (acceso desde Inicio). */
@@ -81,14 +112,21 @@ export function RequestEditor({
   const router = useRouter();
   const form = useForm<RequestFormValues>({
     defaultValues: initialValues,
-    // El esquema transforma (minúsculas, tipos); aquí solo se usan sus errores.
-    resolver: zodResolver(requestSchema) as unknown as Resolver<RequestFormValues>,
+    // El esquema depende del proveedor elegido; transforma (minúsculas, tipos) y aquí solo se usan sus errores.
+    resolver: (vals, ctx, opts) => {
+      const c = findCarrier(carriers, vals.carrier, settings);
+      const schema = schemasFor(c.formKind, c.serviceOptions).full as typeof requestSchema;
+      return (zodResolver(schema) as unknown as Resolver<RequestFormValues>)(vals, ctx, opts);
+    },
     mode: "onSubmit",
     reValidateMode: "onChange",
   });
   const { register, control, setValue, getValues, formState } = form;
   const values = useWatch({ control }) as RequestFormValues;
-  const progress = useShipmentProgress(values);
+  const carrier = findCarrier(carriers, values.carrier, settings);
+  const isTransport = carrier.formKind === "transporte";
+  const schemas = schemasFor(carrier.formKind, carrier.serviceOptions);
+  const progress = useShipmentProgress(values, schemas.blocks);
   const err = (name: keyof RequestFormValues) => formState.errors[name]?.message;
 
   const [ref, setRef] = useState(initialRef);
@@ -98,27 +136,31 @@ export function RequestEditor({
   const lastSaved = useRef(JSON.stringify(initialValues));
   const queue = useRef<Promise<unknown>>(Promise.resolve());
 
-  const cc = useMemo(() => parseEmailList(values.email_cc), [values.email_cc]);
-  const subject = buildSubject(settings.subject_template, values);
-  const body = buildEmailBody(values);
-  const suggestions = getSuggestions(values, settings.office_province);
+  const email = useMemo(() => composeEmail(values, carrier), [values, carrier]);
+  const { cc, subject, text: body } = email;
+  const suggestions = isTransport ? [] : getSuggestions(values, settings.office_province);
   const sent = status !== "borrador";
+  // En el selector: los activos y, si ya estaba elegido, uno desactivado.
+  const carrierOptions = carriers
+    .filter((c) => c.active || c.slug === values.carrier)
+    .map((c) => ({ value: c.slug, label: c.name, hint: c.active ? `${c.refPrefix} · ${c.emailTo[0] ?? ""}` : "Desactivado" }));
 
-  // Escena 3D: avanza con los bloques completos y se precinta al enviar.
+  // Escena 3D: avanza con los bloques completos y se precinta al enviar. En transporte, un bulto por palé (máx. 6).
   const [tab, setTab] = useState<AsideTab>("paquete");
   const [labelHover, setLabelHover] = useState(false);
+  const pallets = Math.min(6, Math.max(1, Number.parseInt(values.pallets, 10) || 1));
   const variant = useMemo<PackageVariant>(
     () => ({
-      shipmentType: (values.shipment_type || null) as PackageVariant["shipmentType"],
-      boxCount: Math.max(1, Number(values.box_count) || 1),
-      urgent: values.urgency === "urgente",
-      international: values.scope === "internacional",
+      shipmentType: isTransport ? "caja" : ((values.shipment_type || null) as PackageVariant["shipmentType"]),
+      boxCount: isTransport ? pallets : Math.max(1, Number(values.box_count) || 1),
+      urgent: isTransport ? /urgente/i.test(values.carrier_service) : values.urgency === "urgente",
+      international: isTransport ? !/^espa[ñn]a$/i.test(values.dest_country.trim()) : values.scope === "internacional",
       labelCompany: values.dest_company,
       labelCity: values.dest_city,
       labelPostalCode: values.dest_postal_code,
       labelRef: ref ?? "",
     }),
-    [values.shipment_type, values.box_count, values.urgency, values.scope, values.dest_company, values.dest_city, values.dest_postal_code, ref],
+    [isTransport, pallets, values.shipment_type, values.box_count, values.urgency, values.scope, values.carrier_service, values.dest_country, values.dest_company, values.dest_city, values.dest_postal_code, ref],
   );
   const goToBlock = useCallback((part: ScenePart) => {
     const block = BLOCKS.find((b) => b.key === part);
@@ -187,27 +229,32 @@ export function RequestEditor({
   }, [getValues, readOnly]);
 
   function focusFirstError() {
-    const order = BLOCK_ORDER.flatMap((block) => Object.keys(BLOCK_FIELDS[block])) as (keyof RequestFormValues)[];
-    const first = order.find((name) => form.getFieldState(name).error);
+    const first = FIELD_ORDER.find((name) => form.getFieldState(name).error);
     if (first) form.setFocus(first);
   }
 
   async function openInGmail() {
     const snapshot = getValues();
-    if (!requestSchema.safeParse(snapshot).success) {
+    const target = findCarrier(carriers, snapshot.carrier, settings);
+    if (!target.active) {
+      toast.error(`${target.name} está desactivado. Elige otro proveedor.`);
+      return;
+    }
+    if (!schemasFor(target.formKind, target.serviceOptions).full.safeParse(snapshot).success) {
       await form.trigger();
       focusFirstError();
       toast.error("Faltan datos: revisa los campos marcados.");
       return;
     }
 
+    const composed = composeEmail(snapshot, target);
     const message = {
-      to: settings.courier_to,
-      cc: parseEmailList(snapshot.email_cc),
-      subject: buildSubject(settings.subject_template, snapshot),
+      to: composed.to,
+      cc: composed.cc,
+      subject: composed.subject,
       authuser: gmailAccount,
     };
-    const fullBody = buildEmailBody(snapshot);
+    const fullBody = composed.text;
     // El enlace de Gmail solo admite texto plano: para que el cuerpo salga como
     // tabla, se copia en HTML y Gmail se abre con Para/CC/Asunto y el cuerpo vacío.
     // La activación del clic dura unos segundos, así que el window.open sigue permitido.
@@ -215,7 +262,7 @@ export function RequestEditor({
     try {
       await navigator.clipboard.write([
         new ClipboardItem({
-          "text/html": new Blob([buildEmailHtml(snapshot)], { type: "text/html" }),
+          "text/html": new Blob([composed.html], { type: "text/html" }),
           "text/plain": new Blob([fullBody], { type: "text/plain" }),
         }),
       ]);
@@ -246,7 +293,7 @@ export function RequestEditor({
 
   async function copyHtml() {
     try {
-      const html = buildEmailHtml(values);
+      const html = email.html;
       await navigator.clipboard.write([
         new ClipboardItem({
           "text/html": new Blob([html], { type: "text/html" }),
@@ -325,6 +372,29 @@ export function RequestEditor({
     setValue("save_recipient", true, { shouldDirty: true });
   }
 
+  /** Transporte: el origen de la carga sale de la libreta (con su código, si el proveedor lo usa). */
+  function selectPickup(option: RecipientOption) {
+    const next = withPickup(getValues(), option);
+    for (const name of PICKUP_FIELDS) {
+      setValue(name, next[name], { shouldDirty: true, shouldValidate: formState.isSubmitted });
+    }
+    toast.success(`Recogida: ${option.company_name}`);
+  }
+
+  /**
+   * Al cambiar de proveedor, el CC pasa a ser el del nuevo proveedor si no se había tocado.
+   * Los errores del formulario anterior ya no aplican.
+   */
+  function onCarrierChange(slug: string) {
+    const next = findCarrier(carriers, slug, settings);
+    const currentCc = parseEmailList(getValues("email_cc"));
+    // "Sin tocar" = vacío o igual al CC por defecto de algún proveedor.
+    if (!currentCc.length || carriers.some((c) => sameList(currentCc, c.emailCc))) {
+      setValue("email_cc", next.emailCc.join(", "), { shouldDirty: true });
+    }
+    form.clearErrors();
+  }
+
   /** Las etiquetas salen de la solicitud guardada: se guarda antes de ir. */
   async function printLabels() {
     if (!readOnly) {
@@ -338,7 +408,10 @@ export function RequestEditor({
   }
 
   async function saveAsTemplate() {
-    const name = window.prompt("Nombre de la plantilla (p. ej. «Documentación a notaría X»):", values.concept || values.dest_company);
+    const name = window.prompt(
+      "Nombre de la plantilla (p. ej. «Documentación a notaría X»):",
+      (isTransport ? [carrier.name, values.product].filter(Boolean).join(" · ") : values.concept) || values.dest_company,
+    );
     if (name === null) return;
     const result = await saveTemplate(name, getValues());
     if (result.ok) toast.success(result.message);
@@ -351,6 +424,32 @@ export function RequestEditor({
       setValue("dest_province", province, { shouldDirty: true });
     }
   }
+
+  function onPickupPostalCodeBlur() {
+    const province = provinceFromPostalCode(getValues("pickup_postal_code"));
+    if (province && !getValues("pickup_province").trim()) {
+      setValue("pickup_province", province, { shouldDirty: true });
+    }
+  }
+
+  /** Campo de texto de los bloques de transporte. */
+  const textField = (
+    name: keyof RequestFormValues,
+    label: string,
+    { className, type, hint, mono, inputMode, onBlur }: { className?: string; type?: string; hint?: string; mono?: boolean; inputMode?: "numeric" | "tel"; onBlur?: () => void } = {},
+  ) => (
+    <Field label={label} htmlFor={name} error={err(name)} hint={hint} className={className}>
+      <Input
+        id={name}
+        type={type}
+        inputMode={inputMode}
+        autoComplete="off"
+        className={mono ? "font-mono" : undefined}
+        {...register(name, onBlur ? { onBlur } : undefined)}
+        aria-invalid={Boolean(err(name)) || undefined}
+      />
+    </Field>
+  );
 
   return (
     <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.82fr)] lg:gap-14">
@@ -385,6 +484,28 @@ export function RequestEditor({
         </header>
 
         <fieldset disabled={readOnly} className="grid gap-14">
+          {/* Proveedor: decide el formulario, los correos y el prefijo de la referencia. */}
+          <section className="grid gap-4">
+            <SectionHeading
+              title="Proveedor de transporte"
+              description={
+                sent
+                  ? "Ya enviada: el proveedor no se puede cambiar."
+                  : "Cada proveedor tiene su formulario, sus correos y su prefijo de referencia."
+              }
+            />
+            <fieldset disabled={sent} className="min-w-0">
+              <ChoiceGroup
+                legend="Proveedor"
+                name="carrier"
+                options={carrierOptions}
+                registration={register("carrier", { onChange: (event) => onCarrierChange(event.target.value) })}
+                error={err("carrier")}
+                optionsClassName="sm:grid-cols-2 xl:grid-cols-4"
+              />
+            </fieldset>
+          </section>
+
           {/* 01 · Solicitante */}
           <section id={BLOCKS[0].anchor} className="grid scroll-mt-24 gap-6">
             <SectionHeading index="01" title="Solicitante" description="Sale de tu perfil. Cámbialo solo para esta solicitud si hace falta." />
@@ -410,7 +531,48 @@ export function RequestEditor({
             </div>
           </section>
 
-          {/* 02 · Petición */}
+          {/* 02 · Carga y recogida (transporte) */}
+          {isTransport ? (
+            <section id={BLOCKS[1].anchor} className="grid scroll-mt-24 gap-6">
+              <SectionHeading index="02" title="Carga y recogida" />
+              <div className="grid gap-5 sm:grid-cols-6">
+                {textField("op", "OP", { className: "sm:col-span-2", mono: true, hint: "Ej.: OP2601850" })}
+                {textField("product", "Producto", { className: "sm:col-span-4", hint: "Ej.: INTERIORES XL SEMANAL 2037" })}
+                {textField("concept", "Referencia", { className: "sm:col-span-6", hint: "Opcional. Ej.: DIGITAL · MUESTRAS CAPRABO" })}
+              </div>
+              <h3 className="text-sm font-semibold tracking-tight">Recogida</h3>
+              {!readOnly ? <RecipientCombobox onSelect={selectPickup} label="Origen de la libreta" /> : null}
+              {values.pickup_recipient_id ? (
+                <p className="-mt-2 flex flex-wrap items-center gap-2 text-sm text-muted">
+                  <span className="size-1.5 rounded-full bg-success" aria-hidden />
+                  Origen de la libreta.
+                  {!readOnly ? (
+                    <button
+                      type="button"
+                      onClick={() => setValue("pickup_recipient_id", null, { shouldDirty: true })}
+                      className="inline-flex items-center gap-1 underline-offset-4 hover:text-ink hover:underline"
+                    >
+                      <X className="size-3.5" /> Desvincular
+                    </button>
+                  ) : null}
+                </p>
+              ) : null}
+              <div className="grid gap-5 sm:grid-cols-6">
+                {carrier.usesCodes ? textField("pickup_code", "Código de recogida", { className: "sm:col-span-2", mono: true, hint: "Rotomadrid: 178" }) : null}
+                {textField("pickup_company", "Origen de la carga", { className: carrier.usesCodes ? "sm:col-span-4" : "sm:col-span-6" })}
+                {textField("pickup_address", "Dirección", { className: "sm:col-span-6" })}
+                {textField("pickup_postal_code", "Código postal", { className: "sm:col-span-2", mono: true, inputMode: "numeric", onBlur: onPickupPostalCodeBlur })}
+                {textField("pickup_city", "Ciudad", { className: "sm:col-span-4" })}
+                {textField("pickup_province", "Provincia", { className: "sm:col-span-2" })}
+                {textField("pickup_contact", "Contacto", { className: "sm:col-span-2" })}
+                {textField("pickup_phone", "Teléfono", { className: "sm:col-span-2", type: "tel", mono: true })}
+                {textField("pickup_date", "Fecha de recogida", { className: "sm:col-span-3", type: "date", mono: true })}
+                {textField("pickup_time", "Hora de recogida", { className: "sm:col-span-3", type: "time", mono: true, hint: "Opcional" })}
+                {textField("pickup_notes", "Otros (recogida)", { className: "sm:col-span-6" })}
+              </div>
+            </section>
+          ) : (
+          /* 02 · Petición */
           <section id={BLOCKS[1].anchor} className="grid scroll-mt-24 gap-6">
             <SectionHeading index="02" title="Petición" />
             <div className="grid gap-5">
@@ -436,8 +598,9 @@ export function RequestEditor({
               </div>
             </div>
           </section>
+          )}
 
-          {/* 03 · Destino */}
+          {/* 03 · Destino (en transporte, Entrega) */}
           <section
             id={BLOCKS[2].anchor}
             className={cn(
@@ -445,7 +608,7 @@ export function RequestEditor({
               labelHover ? "ring-accent/40" : "ring-transparent",
             )}
           >
-            <SectionHeading index="03" title="Destino" />
+            <SectionHeading index="03" title={isTransport ? "Entrega" : "Destino"} />
             {!readOnly ? (
               <div className="grid gap-2">
                 <RecipientCombobox onSelect={selectRecipient} />
@@ -470,7 +633,15 @@ export function RequestEditor({
               </p>
             ) : null}
             <div className="grid gap-5 sm:grid-cols-6">
-              <Field label="Empresa de destino" htmlFor="dest_company" error={err("dest_company")} className="sm:col-span-6">
+              {isTransport && carrier.usesCodes
+                ? textField("delivery_code", "Código de entrega", { className: "sm:col-span-2", mono: true, hint: "Lo da el proveedor para cada destino" })
+                : null}
+              <Field
+                label={isTransport ? "Lugar de entrega" : "Empresa de destino"}
+                htmlFor="dest_company"
+                error={err("dest_company")}
+                className={isTransport && carrier.usesCodes ? "sm:col-span-4" : "sm:col-span-6"}
+              >
                 <Input id="dest_company" autoComplete="off" {...register("dest_company")} aria-invalid={Boolean(err("dest_company")) || undefined} />
               </Field>
               <Field label="Dirección" htmlFor="dest_address" error={err("dest_address")} className="sm:col-span-6">
@@ -494,6 +665,13 @@ export function RequestEditor({
               <Field label="Teléfono de contacto" htmlFor="dest_phone" error={err("dest_phone")} className="sm:col-span-3">
                 <Input id="dest_phone" type="tel" className="font-mono" {...register("dest_phone")} aria-invalid={Boolean(err("dest_phone")) || undefined} />
               </Field>
+              {isTransport ? (
+                <>
+                  {textField("delivery_date", "Fecha de entrega", { className: "sm:col-span-3", type: "date", mono: true })}
+                  {textField("delivery_time", "Hora de entrega", { className: "sm:col-span-3", type: "time", mono: true, hint: "Opcional" })}
+                  {textField("delivery_notes", "Otros (entrega)", { className: "sm:col-span-6" })}
+                </>
+              ) : null}
               <label className="flex items-center gap-3 text-sm sm:col-span-6">
                 <input type="checkbox" className="size-4 accent-[var(--accent)]" {...register("save_recipient")} />
                 {values.recipient_id ? "Actualizar en la libreta de direcciones" : "Guardar en la libreta de direcciones"}
@@ -526,12 +704,33 @@ export function RequestEditor({
                 ))}
               </ul>
             ) : null}
-            <div className="grid gap-6 sm:grid-cols-3">
-              <ChoiceGroup legend="Urgencia (plazo)" name="urgency" options={urgencyOptions} registration={register("urgency")} error={err("urgency")} />
-              <ChoiceGroup legend="Ámbito geográfico" name="scope" options={scopeOptions} registration={register("scope")} error={err("scope")} />
-              <ChoiceGroup legend="Tipo de transporte" name="transport" options={transportOptions} registration={register("transport")} error={err("transport")} />
-            </div>
-            <Field label="CC" htmlFor="email_cc" error={err("email_cc")} hint="Separa varios emails con comas. Para: siempre la mensajería.">
+            {isTransport ? (
+              <div className="grid gap-5 sm:grid-cols-6">
+                {carrier.serviceOptions.length ? (
+                  <ChoiceGroup
+                    legend={`Tipo de servicio ${carrier.name}`}
+                    name="carrier_service"
+                    options={carrier.serviceOptions.map((o) => ({ value: o, label: o }))}
+                    registration={register("carrier_service")}
+                    error={err("carrier_service")}
+                    className="sm:col-span-6"
+                    optionsClassName="sm:grid-cols-2"
+                  />
+                ) : null}
+                {textField("pallets", "Nº de palés", { className: "sm:col-span-3", hint: "Ej.: 15 palets aprox" })}
+                {textField("weight_kg", "Peso total (kg)", { className: "sm:col-span-3", hint: "Ej.: 24000kg" })}
+                <Field label="Observaciones" htmlFor="observations" error={err("observations")} className="sm:col-span-6">
+                  <Textarea id="observations" rows={3} {...register("observations")} aria-invalid={Boolean(err("observations")) || undefined} />
+                </Field>
+              </div>
+            ) : (
+              <div className="grid gap-6 sm:grid-cols-3">
+                <ChoiceGroup legend="Urgencia (plazo)" name="urgency" options={urgencyOptions} registration={register("urgency")} error={err("urgency")} />
+                <ChoiceGroup legend="Ámbito geográfico" name="scope" options={scopeOptions} registration={register("scope")} error={err("scope")} />
+                <ChoiceGroup legend="Tipo de transporte" name="transport" options={transportOptions} registration={register("transport")} error={err("transport")} />
+              </div>
+            )}
+            <Field label="CC" htmlFor="email_cc" error={err("email_cc")} hint={`Separa varios emails con comas. Para: ${carrier.emailTo.join(", ")}.`}>
               <Input id="email_cc" className="font-mono" {...register("email_cc")} aria-invalid={Boolean(err("email_cc")) || undefined} />
             </Field>
           </section>
@@ -567,7 +766,7 @@ export function RequestEditor({
       </form>
 
       <aside className="grid gap-6 self-start lg:sticky lg:top-24" aria-label="Progreso y vista previa">
-        <ProgressSteps progress={progress} sent={sent} />
+        <ProgressSteps progress={progress} sent={sent} titles={isTransport ? TRANSPORT_TITLES : undefined} />
         <div className="grid gap-3">
           <div role="tablist" aria-label="Vista lateral" className="flex gap-1 rounded-lg bg-line/50 p-1 text-sm">
             {(["paquete", "correo"] as const).map((key) => (
@@ -601,7 +800,7 @@ export function RequestEditor({
             ) : null}
           </div>
           <div role="tabpanel" id="panel-correo" aria-labelledby="tab-correo" hidden={tab !== "correo"}>
-            <EmailPreview to={settings.courier_to} cc={cc} subject={subject} body={body} />
+            <EmailPreview to={email.to} cc={cc} subject={subject} body={body} />
           </div>
         </div>
       </aside>
@@ -630,10 +829,31 @@ const DEST_FIELDS = [
   "dest_country",
   "dest_contact",
   "dest_phone",
+  "delivery_code",
   "save_recipient",
 ] as const;
 
-type DestField = keyof (typeof BLOCK_FIELDS)["destination"];
+const PICKUP_FIELDS = [
+  "pickup_recipient_id",
+  "pickup_code",
+  "pickup_company",
+  "pickup_address",
+  "pickup_postal_code",
+  "pickup_city",
+  "pickup_province",
+  "pickup_contact",
+  "pickup_phone",
+] as const;
+
+type DestField =
+  | "dest_company"
+  | "dest_address"
+  | "dest_postal_code"
+  | "dest_city"
+  | "dest_province"
+  | "dest_country"
+  | "dest_contact"
+  | "dest_phone";
 
 /** Del resultado del buscador al bloque de destino (email y web no tienen hueco). */
 const SEARCH_FIELD_MAP: Partial<Record<CandidateField, DestField>> = {
@@ -646,13 +866,17 @@ const SEARCH_FIELD_MAP: Partial<Record<CandidateField, DestField>> = {
   phone: "dest_phone",
 };
 
-// Campos de cada bloque, en orden de pantalla (para enfocar el primer error).
-const BLOCK_FIELDS = {
-  requester: { request_date: 1, requester_name: 1, requester_phone: 1, requester_email: 1, company: 1, ceco: 1 },
-  petition: { concept: 1, description: 1, shipment_type: 1, box_count: 1 },
-  destination: { dest_company: 1, dest_address: 1, dest_postal_code: 1, dest_city: 1, dest_province: 1, dest_country: 1, dest_contact: 1, dest_phone: 1 },
-  service: { urgency: 1, scope: 1, transport: 1, email_cc: 1 },
-} as const;
+// Campos en orden de pantalla, de los dos formularios (para enfocar el primer error).
+const FIELD_ORDER: (keyof RequestFormValues)[] = [
+  "carrier",
+  "request_date", "requester_name", "requester_phone", "requester_email", "company", "ceco",
+  "op", "product", "concept", "description", "shipment_type", "box_count",
+  "pickup_code", "pickup_company", "pickup_address", "pickup_postal_code", "pickup_city", "pickup_province",
+  "pickup_contact", "pickup_phone", "pickup_date", "pickup_time", "pickup_notes",
+  "delivery_code", "dest_company", "dest_address", "dest_postal_code", "dest_city", "dest_province", "dest_country",
+  "dest_contact", "dest_phone", "delivery_date", "delivery_time", "delivery_notes",
+  "urgency", "scope", "transport", "carrier_service", "pallets", "weight_kg", "observations", "email_cc",
+];
 
 function SaveIndicator({ state }: { state: SaveState }) {
   if (state === "idle") return null;

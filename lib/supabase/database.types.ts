@@ -77,6 +77,63 @@ export type Database = {
         }
         Relationships: []
       }
+      carriers: {
+        Row: {
+          active: boolean
+          customer_code: string
+          email_cc: string[]
+          email_intro: string
+          email_layout: string
+          email_to: string[]
+          form_kind: string
+          greeting_name: string
+          name: string
+          ref_prefix: string
+          service_options: string[]
+          slug: string
+          sort_order: number
+          subject_template: string
+          updated_at: string
+          uses_codes: boolean
+        }
+        Insert: {
+          active?: boolean
+          customer_code?: string
+          email_cc?: string[]
+          email_intro?: string
+          email_layout?: string
+          email_to: string[]
+          form_kind?: string
+          greeting_name?: string
+          name: string
+          ref_prefix: string
+          service_options?: string[]
+          slug: string
+          sort_order?: number
+          subject_template: string
+          updated_at?: string
+          uses_codes?: boolean
+        }
+        Update: {
+          active?: boolean
+          customer_code?: string
+          email_cc?: string[]
+          email_intro?: string
+          email_layout?: string
+          email_to?: string[]
+          form_kind?: string
+          greeting_name?: string
+          name?: string
+          ref_prefix?: string
+          service_options?: string[]
+          slug?: string
+          sort_order?: number
+          subject_template?: string
+          updated_at?: string
+          uses_codes?: boolean
+        }
+        Relationships: []
+      }
       company_search_cache: {
         Row: {
           created_at: string
@@ -146,6 +203,7 @@ export type Database = {
       recipients: {
         Row: {
           address: string | null
+          carrier_codes: Json
           city: string | null
           company_name: string
           contact_person: string | null
@@ -168,6 +226,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          carrier_codes?: Json
           city?: string | null
           company_name: string
           contact_person?: string | null
@@ -190,6 +249,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          carrier_codes?: Json
           city?: string | null
           company_name?: string
           contact_person?: string | null
@@ -303,14 +363,17 @@ export type Database = {
       shipment_ref_counters: {
         Row: {
           last: number
+          prefix: string
           year: number
         }
         Insert: {
           last?: number
+          prefix?: string
           year: number
         }
         Update: {
           last?: number
+          prefix?: string
           year?: number
         }
         Relationships: []
@@ -318,10 +381,16 @@ export type Database = {
       shipment_requests: {
         Row: {
           box_count: number | null
+          carrier: string
+          carrier_service: string | null
           ceco: string
           company: string
           concept: string | null
           created_at: string
+          delivery_code: string | null
+          delivery_date: string | null
+          delivery_notes: string | null
+          delivery_time: string | null
           description: string | null
           dest_address: string | null
           dest_city: string | null
@@ -335,6 +404,22 @@ export type Database = {
           email_cc: string[]
           email_subject: string | null
           id: string
+          observations: string | null
+          op: string | null
+          pallets: string | null
+          pickup_address: string | null
+          pickup_city: string | null
+          pickup_code: string | null
+          pickup_company: string | null
+          pickup_contact: string | null
+          pickup_date: string | null
+          pickup_notes: string | null
+          pickup_phone: string | null
+          pickup_postal_code: string | null
+          pickup_province: string | null
+          pickup_recipient_id: string | null
+          pickup_time: string | null
+          product: string | null
           recipient_id: string | null
           ref: string
           request_date: string
@@ -349,13 +434,20 @@ export type Database = {
           transport: string | null
           updated_at: string
           urgency: string | null
+          weight_kg: string | null
         }
         Insert: {
           box_count?: number | null
+          carrier?: string
+          carrier_service?: string | null
           ceco?: string
           company?: string
           concept?: string | null
           created_at?: string
+          delivery_code?: string | null
+          delivery_date?: string | null
+          delivery_notes?: string | null
+          delivery_time?: string | null
           description?: string | null
           dest_address?: string | null
           dest_city?: string | null
@@ -369,6 +461,22 @@ export type Database = {
           email_cc?: string[]
           email_subject?: string | null
           id?: string
+          observations?: string | null
+          op?: string | null
+          pallets?: string | null
+          pickup_address?: string | null
+          pickup_city?: string | null
+          pickup_code?: string | null
+          pickup_company?: string | null
+          pickup_contact?: string | null
+          pickup_date?: string | null
+          pickup_notes?: string | null
+          pickup_phone?: string | null
+          pickup_postal_code?: string | null
+          pickup_province?: string | null
+          pickup_recipient_id?: string | null
+          pickup_time?: string | null
+          product?: string | null
           recipient_id?: string | null
           ref?: string
           request_date?: string
@@ -383,13 +491,20 @@ export type Database = {
           transport?: string | null
           updated_at?: string
           urgency?: string | null
+          weight_kg?: string | null
         }
         Update: {
           box_count?: number | null
+          carrier?: string
+          carrier_service?: string | null
           ceco?: string
           company?: string
           concept?: string | null
           created_at?: string
+          delivery_code?: string | null
+          delivery_date?: string | null
+          delivery_notes?: string | null
+          delivery_time?: string | null
           description?: string | null
           dest_address?: string | null
           dest_city?: string | null
@@ -403,6 +518,22 @@ export type Database = {
           email_cc?: string[]
           email_subject?: string | null
           id?: string
+          observations?: string | null
+          op?: string | null
+          pallets?: string | null
+          pickup_address?: string | null
+          pickup_city?: string | null
+          pickup_code?: string | null
+          pickup_company?: string | null
+          pickup_contact?: string | null
+          pickup_date?: string | null
+          pickup_notes?: string | null
+          pickup_phone?: string | null
+          pickup_postal_code?: string | null
+          pickup_province?: string | null
+          pickup_recipient_id?: string | null
+          pickup_time?: string | null
+          product?: string | null
           recipient_id?: string | null
           ref?: string
           request_date?: string
@@ -417,8 +548,23 @@ export type Database = {
           transport?: string | null
           updated_at?: string
           urgency?: string | null
+          weight_kg?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "shipment_requests_carrier_fkey"
+            columns: ["carrier"]
+            isOneToOne: false
+            referencedRelation: "carriers"
+            referencedColumns: ["slug"]
+          },
+          {
+            foreignKeyName: "shipment_requests_pickup_recipient_id_fkey"
+            columns: ["pickup_recipient_id"]
+            isOneToOne: false
+            referencedRelation: "recipients"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "shipment_requests_recipient_id_fkey"
             columns: ["recipient_id"]
@@ -447,6 +593,7 @@ export type Database = {
         Args: { drop_id: string; keep_id: string }
         Returns: {
           address: string | null
+          carrier_codes: Json
           city: string | null
           company_name: string
           contact_person: string | null
@@ -474,6 +621,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      next_shipment_ref: {
+        Args: { carrier_slug: string; ref_date: string }
+        Returns: string
+      }
       recipient_search_text: {
         Args: { city: string; company: string; contact: string }
         Returns: string
@@ -482,6 +633,7 @@ export type Database = {
         Args: { max_results?: number; q?: string }
         Returns: {
           address: string | null
+          carrier_codes: Json
           city: string | null
           company_name: string
           contact_person: string | null

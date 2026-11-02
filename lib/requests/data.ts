@@ -3,7 +3,8 @@ import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/database.types";
 import type { Profile } from "@/lib/auth/dal";
-import type { RequestFormValues } from "./schema";
+import { DEFAULT_CARRIER, type Carrier } from "@/lib/carriers/types";
+import { EMPTY_TRANSPORT_VALUES, type RequestFormValues } from "./schema";
 
 export type ShipmentRequestRow = Database["public"]["Tables"]["shipment_requests"]["Row"];
 export type AppSettings = Database["public"]["Tables"]["app_settings"]["Row"];
@@ -37,8 +38,11 @@ export function todayInMadrid(): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Madrid" }).format(new Date());
 }
 
-export function emptyRequestValues(profile: Profile, settings: AppSettings): RequestFormValues {
+/** Formulario vacío. El CC sale del proveedor (por defecto, la mensajería interna). */
+export function emptyRequestValues(profile: Profile, settings: AppSettings, carrier?: Carrier | null): RequestFormValues {
   return {
+    ...EMPTY_TRANSPORT_VALUES,
+    carrier: carrier?.slug ?? DEFAULT_CARRIER,
     request_date: todayInMadrid(),
     requester_name: profile.full_name,
     requester_phone: profile.phone ?? "",
@@ -61,13 +65,14 @@ export function emptyRequestValues(profile: Profile, settings: AppSettings): Req
     scope: "",
     transport: "",
     recipient_id: null,
-    email_cc: settings.courier_cc.join(", "),
+    email_cc: (carrier?.emailCc ?? settings.courier_cc).join(", "),
     save_recipient: true,
   };
 }
 
 export function rowToValues(row: ShipmentRequestRow): RequestFormValues {
   return {
+    carrier: row.carrier,
     request_date: row.request_date,
     requester_name: row.requester_name,
     requester_phone: row.requester_phone ?? "",
@@ -92,6 +97,28 @@ export function rowToValues(row: ShipmentRequestRow): RequestFormValues {
     recipient_id: row.recipient_id,
     email_cc: row.email_cc.join(", "),
     save_recipient: row.recipient_id === null,
+    op: row.op ?? "",
+    product: row.product ?? "",
+    pickup_recipient_id: row.pickup_recipient_id,
+    pickup_code: row.pickup_code ?? "",
+    pickup_company: row.pickup_company ?? "",
+    pickup_address: row.pickup_address ?? "",
+    pickup_postal_code: row.pickup_postal_code ?? "",
+    pickup_city: row.pickup_city ?? "",
+    pickup_province: row.pickup_province ?? "",
+    pickup_contact: row.pickup_contact ?? "",
+    pickup_phone: row.pickup_phone ?? "",
+    pickup_date: row.pickup_date ?? "",
+    pickup_time: row.pickup_time ?? "",
+    pickup_notes: row.pickup_notes ?? "",
+    delivery_code: row.delivery_code ?? "",
+    delivery_date: row.delivery_date ?? "",
+    delivery_time: row.delivery_time ?? "",
+    delivery_notes: row.delivery_notes ?? "",
+    pallets: row.pallets ?? "",
+    weight_kg: row.weight_kg ?? "",
+    carrier_service: row.carrier_service ?? "",
+    observations: row.observations ?? "",
   };
 }
 
@@ -105,14 +132,14 @@ export async function getRequest(id: string): Promise<ShipmentRequestRow | null>
 
 export type RecentRequest = Pick<
   ShipmentRequestRow,
-  "id" | "ref" | "request_date" | "dest_company" | "dest_city" | "urgency" | "status" | "requester_name" | "created_at"
+  "id" | "ref" | "request_date" | "dest_company" | "dest_city" | "urgency" | "status" | "requester_name" | "created_at" | "carrier"
 >;
 
 export async function listRecentRequests(limit = 6): Promise<RecentRequest[]> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("shipment_requests")
-    .select("id, ref, request_date, dest_company, dest_city, urgency, status, requester_name, created_at")
+    .select("id, ref, request_date, dest_company, dest_city, urgency, status, requester_name, created_at, carrier")
     .order("created_at", { ascending: false })
     .limit(limit);
   return data ?? [];
@@ -129,5 +156,8 @@ export function repeatValues(row: ShipmentRequestRow, profile: Profile, settings
     requester_email: base.requester_email,
     company: base.company,
     ceco: base.ceco,
+    // Las fechas de recogida y entrega son de cada envío.
+    pickup_date: "",
+    delivery_date: "",
   };
 }

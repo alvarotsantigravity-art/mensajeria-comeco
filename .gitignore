@@ -38,3 +38,6 @@ Thumbs.db
 
 # notas locales con datos de acceso: nunca al repositorio
 docs/login.txt
+
+# Solicitudes reales de proveedores (datos de terceros): nunca al repositorio
+docs/solicitud *.pdf

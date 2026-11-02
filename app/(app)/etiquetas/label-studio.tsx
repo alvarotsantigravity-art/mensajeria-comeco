@@ -31,13 +31,14 @@ export function LabelStudio({
   initialOffsets: LabelOffsets;
   isAdmin: boolean;
 }) {
-  const [format, setFormat] = useState<LabelFormat>(source.documentation ? "4" : source.boxCount > 2 ? "8" : "4");
+  // Palés: etiqueta grande (A5) por defecto.
+  const [format, setFormat] = useState<LabelFormat>(source.unit === "Palé" ? "2" : source.documentation ? "4" : source.boxCount > 2 ? "8" : "4");
   const [start, setStart] = useState(1);
   const [parcels, setParcels] = useState(source.documentation ? 1 : source.boxCount);
   const [urgent, setUrgent] = useState(source.urgent);
   const [fragile, setFragile] = useState(false);
   const [documentation, setDocumentation] = useState(source.documentation);
-  const [notes, setNotes] = useState("");
+  const [notes, setNotes] = useState(source.defaultNotes ?? "");
   const [offsets, setOffsets] = useState(initialOffsets);
   const [printing, setPrinting] = useState(false);
   const [saving, startSaving] = useTransition();
@@ -189,7 +190,7 @@ export function LabelStudio({
               ))}
             </select>
           </Field>
-          <Field label="Bultos" htmlFor="bultos" hint={documentation ? "Documentación: suele ser 1" : undefined}>
+          <Field label={source.unit === "Palé" ? "Palés" : "Bultos"} htmlFor="bultos" hint={documentation ? "Documentación: suele ser 1" : undefined}>
             <Input
               id="bultos"
               type="number"
@@ -335,7 +336,7 @@ function MiniLabel({ label, format }: { label: LabelData; format: LabelFormat })
         </span>
         {label.parcel ? (
           <span className="font-bold whitespace-nowrap" style={{ fontSize: cq(11 * k) }}>
-            Bulto {label.parcel.index}/{label.parcel.total}
+            {label.unit} {label.parcel.index}/{label.parcel.total}
           </span>
         ) : null}
         {label.qr ? (

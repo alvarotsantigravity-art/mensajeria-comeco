@@ -3,10 +3,11 @@
 import { z } from "zod";
 import { requireUser } from "@/lib/auth/dal";
 import { createClient } from "@/lib/supabase/server";
-import { buildEmailBody, buildSubject } from "@/lib/email/build-body";
-import { getSettings, todayInMadrid } from "@/lib/requests/data";
+import { getCarrier } from "@/lib/carriers/data";
+import { composeEmail } from "@/lib/email/compose";
+import { todayInMadrid } from "@/lib/requests/data";
 import type { Status } from "@/lib/requests/options";
-import { draftSchema, parseEmailList, requestSchema, type RequestFormValues } from "@/lib/requests/schema";
+import { draftSchema, parseEmailList, schemasFor, type RequestFormValues } from "@/lib/requests/schema";
 
 export type SaveRequestResult =
   | { ok: true; id: string; ref: string; status: Status; recipientId: string | null }
@@ -46,10 +47,43 @@ function toRow(v: Values) {
     scope: v.scope || null,
     transport: v.transport || null,
     email_cc: parseEmailList(v.email_cc),
+    carrier: v.carrier,
+    op: nullable(v.op),
+    product: nullable(v.product),
+    pickup_recipient_id: v.pickup_recipient_id,
+    pickup_code: nullable(v.pickup_code),
+    pickup_company: nullable(v.pickup_company),
+    pickup_address: nullable(v.pickup_address),
+    pickup_postal_code: nullable(v.pickup_postal_code),
+    pickup_city: nullable(v.pickup_city),
+    pickup_province: nullable(v.pickup_province),
+    pickup_contact: nullable(v.pickup_contact),
+    pickup_phone: nullable(v.pickup_phone),
+    pickup_date: v.pickup_date || null,
+    pickup_time: nullable(v.pickup_time),
+    pickup_notes: nullable(v.pickup_notes),
+    delivery_code: nullable(v.delivery_code),
+    delivery_date: v.delivery_date || null,
+    delivery_time: nullable(v.delivery_time),
+    delivery_notes: nullable(v.delivery_notes),
+    pallets: nullable(v.pallets),
+    weight_kg: nullable(v.weight_kg),
+    carrier_service: nullable(v.carrier_service),
+    observations: nullable(v.observations),
   };
 }
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
+
+/** Guarda el código de una dirección para un proveedor (p. ej. BOYACA 178). Si falla, sigue. */
+async function rememberCode(supabase: Supabase, recipientId: string | null, carrier: string, code: string) {
+  if (!recipientId || !code.trim()) return;
+  const { data } = await supabase.from("recipients").select("carrier_codes").eq("id", recipientId).maybeSingle();
+  if (!data) return;
+  const codes = { ...((data.carrier_codes ?? {}) as Record<string, string>), [carrier]: code.trim() };
+  const { error } = await supabase.from("recipients").update({ carrier_codes: codes }).eq("id", recipientId);
+  if (error) console.error("No se pudo guardar el código del proveedor", error.message);
+}
 
 /** Crea o actualiza el destinatario en la libreta. Si falla, el envío sigue adelante. */
 async function upsertRecipient(supabase: Supabase, v: Values): Promise<string | null> {
@@ -99,19 +133,27 @@ export async function saveRequest(input: {
     email_body?: string;
   } = toRow(values);
 
+  const carrier = await getCarrier(values.carrier);
+  if (!carrier) return { ok: false, message: "Proveedor de transporte no válido." };
+
   if (send) {
-    const full = requestSchema.safeParse(input.values);
+    if (!carrier.active) return { ok: false, message: `${carrier.name} está desactivado. Elige otro proveedor.` };
+    const full = schemasFor(carrier.formKind, carrier.serviceOptions).full.safeParse(input.values);
     if (!full.success) {
       return { ok: false, message: "Revisa los campos marcados.", errors: z.flattenError(full.error).fieldErrors };
     }
-    const settings = await getSettings();
     const recipientId = values.save_recipient ? await upsertRecipient(supabase, values) : values.recipient_id;
+    if (carrier.usesCodes) {
+      await rememberCode(supabase, recipientId, carrier.slug, values.delivery_code);
+      await rememberCode(supabase, values.pickup_recipient_id, carrier.slug, values.pickup_code);
+    }
+    const email = composeEmail(values as RequestFormValues, carrier);
     row = {
       ...row,
       recipient_id: recipientId,
       status: "enviada",
-      email_subject: buildSubject(settings.subject_template, input.values),
-      email_body: buildEmailBody(input.values),
+      email_subject: email.subject,
+      email_body: email.text,
     };
   }
 

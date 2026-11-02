@@ -90,7 +90,7 @@ export async function mergeRecipients(keepId: string, dropId: string): Promise<A
 
 export type RecipientOption = Pick<
   RecipientRow,
-  "id" | "company_name" | "address" | "postal_code" | "city" | "province" | "country" | "contact_person" | "phone" | "is_favorite" | "usage_count"
+  "id" | "company_name" | "address" | "postal_code" | "city" | "province" | "country" | "contact_person" | "phone" | "is_favorite" | "usage_count" | "carrier_codes"
 >;
 
 /** Autocompletado del campo "Destinatario" en el formulario. */
@@ -110,5 +110,6 @@ export async function findRecipients(q: string): Promise<RecipientOption[]> {
     phone: r.phone,
     is_favorite: r.is_favorite,
     usage_count: r.usage_count,
+    carrier_codes: r.carrier_codes,
   }));
 }

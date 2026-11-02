@@ -23,6 +23,28 @@ export const TEMPLATE_FIELDS = [
   "scope",
   "transport",
   "email_cc",
+  // Transporte (sin fechas: son de cada envío)
+  "carrier",
+  "op",
+  "product",
+  "pickup_recipient_id",
+  "pickup_code",
+  "pickup_company",
+  "pickup_address",
+  "pickup_postal_code",
+  "pickup_city",
+  "pickup_province",
+  "pickup_contact",
+  "pickup_phone",
+  "pickup_time",
+  "pickup_notes",
+  "delivery_code",
+  "delivery_time",
+  "delivery_notes",
+  "pallets",
+  "weight_kg",
+  "carrier_service",
+  "observations",
 ] as const satisfies readonly (keyof RequestFormValues)[];
 
 const payloadSchema = draftSchema.pick(Object.fromEntries(TEMPLATE_FIELDS.map((k) => [k, true])) as { [K in (typeof TEMPLATE_FIELDS)[number]]: true }).partial();

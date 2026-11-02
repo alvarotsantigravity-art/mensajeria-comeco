@@ -2,10 +2,12 @@ import { describe, expect, test } from "vitest";
 import { buildEmailBody, buildSubject, formatRequestDate } from "@/lib/email/build-body";
 import { buildEmailHtml } from "@/lib/email/build-html";
 import { buildGmailUrl } from "@/lib/email/gmail-url";
-import { requestSchema, type RequestFormValues } from "@/lib/requests/schema";
+import { EMPTY_TRANSPORT_VALUES, requestSchema, type RequestFormValues } from "@/lib/requests/schema";
 import { getSuggestions } from "@/lib/requests/suggestions";
 
 const values: RequestFormValues = {
+  ...EMPTY_TRANSPORT_VALUES,
+  carrier: "mensajeria",
   request_date: "2026-11-03",
   requester_name: "Ana Pérez",
   requester_phone: "916 76 75 04",

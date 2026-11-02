@@ -20,7 +20,17 @@ const STATUS_TONE: Record<Status, "neutral" | "accent" | "success" | "urgent"> =
   cancelada: "urgent",
 };
 
-export function HistoryTable({ rows, currentUserId, isAdmin }: { rows: HistoryRow[]; currentUserId: string; isAdmin: boolean }) {
+export function HistoryTable({
+  rows,
+  currentUserId,
+  isAdmin,
+  carrierNames,
+}: {
+  rows: HistoryRow[];
+  currentUserId: string;
+  isAdmin: boolean;
+  carrierNames: Record<string, string>;
+}) {
   const [pending, startTransition] = useTransition();
   const [picked, setPicked] = useState<Set<string>>(new Set());
 
@@ -92,6 +102,7 @@ export function HistoryTable({ rows, currentUserId, isAdmin }: { rows: HistoryRo
             </Th>
             <Th>Ref.</Th>
             <Th>Destino</Th>
+            <Th className="hidden md:table-cell">Proveedor</Th>
             <Th className="hidden lg:table-cell">Solicitante</Th>
             <Th className="hidden sm:table-cell">Fecha</Th>
             <Th>Estado</Th>
@@ -128,9 +139,14 @@ export function HistoryTable({ rows, currentUserId, isAdmin }: { rows: HistoryRo
                       {r.dest_company || <span className="text-muted">Sin destino</span>}
                       {r.dest_city ? <span className="font-normal text-muted"> · {r.dest_city}</span> : null}
                     </span>
-                    {r.concept ? <span className="line-clamp-1 text-sm text-muted">{r.concept}</span> : null}
+                    {r.carrier !== "mensajeria" && (r.op || r.product) ? (
+                      <span className="line-clamp-1 text-sm text-muted">{[r.op, r.product].filter(Boolean).join(" · ")}</span>
+                    ) : r.concept ? (
+                      <span className="line-clamp-1 text-sm text-muted">{r.concept}</span>
+                    ) : null}
                   </Link>
                 </Td>
+                <Td className="hidden text-sm whitespace-nowrap md:table-cell">{carrierNames[r.carrier] ?? r.carrier}</Td>
                 <Td className="hidden text-sm lg:table-cell">{r.requester_name}</Td>
                 <Td className="hidden font-mono text-xs text-muted sm:table-cell">{formatRequestDate(r.request_date)}</Td>
                 <Td>

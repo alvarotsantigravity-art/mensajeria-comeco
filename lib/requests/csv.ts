@@ -48,10 +48,29 @@ const COLUMNS: [string, (r: ShipmentRequestRow) => string | number | null][] = [
   ["Tipo", (r) => label(SHIPMENT_TYPE_EMAIL, r.shipment_type as ShipmentType)],
   ["Cajas", (r) => r.box_count],
   ["Enviada el", (r) => (r.sent_at ? formatDate(r.sent_at) : "")],
+  // Transporte (al final: las columnas de siempre no cambian de sitio)
+  ["Proveedor", (r) => r.carrier],
+  ["OP", (r) => r.op],
+  ["Producto", (r) => r.product],
+  ["Origen", (r) => r.pickup_company],
+  ["Código recogida", (r) => r.pickup_code],
+  ["Fecha recogida", (r) => (r.pickup_date ? formatRequestDate(r.pickup_date) : "")],
+  ["Hora recogida", (r) => r.pickup_time],
+  ["Código entrega", (r) => r.delivery_code],
+  ["Fecha entrega", (r) => (r.delivery_date ? formatRequestDate(r.delivery_date) : "")],
+  ["Hora entrega", (r) => r.delivery_time],
+  ["Palés", (r) => r.pallets],
+  ["Peso (kg)", (r) => r.weight_kg],
+  ["Servicio", (r) => r.carrier_service],
+  ["Observaciones", (r) => r.observations],
 ];
 
-export function buildHistoryCsv(rows: ShipmentRequestRow[]): string {
+/** carrierNames: slug → nombre del proveedor (sin él, sale el slug). */
+export function buildHistoryCsv(rows: ShipmentRequestRow[], carrierNames: Record<string, string> = {}): string {
   const lines = [COLUMNS.map(([title]) => csvCell(title)).join(";")];
-  for (const row of rows) lines.push(COLUMNS.map(([, get]) => csvCell(get(row))).join(";"));
+  for (const row of rows) {
+    const named = { ...row, carrier: carrierNames[row.carrier] ?? row.carrier };
+    lines.push(COLUMNS.map(([, get]) => csvCell(get(named))).join(";"));
+  }
   return `﻿${lines.join("\r\n")}\r\n`;
 }

@@ -10,6 +10,7 @@ export function ChoiceGroup({
   registration,
   error,
   className,
+  optionsClassName,
 }: {
   legend: string;
   name: string;
@@ -17,12 +18,13 @@ export function ChoiceGroup({
   registration: UseFormRegisterReturn;
   error?: string;
   className?: string;
+  optionsClassName?: string;
 }) {
   const errorId = `${name}-error`;
   return (
     <fieldset className={cn("grid gap-2", className)} aria-describedby={error ? errorId : undefined}>
       <legend className="mb-2 text-[12px] font-medium tracking-tight text-ink">{legend}</legend>
-      <div className="grid gap-2">
+      <div className={cn("grid gap-2", optionsClassName)}>
         {options.map((option) => (
           <label
             key={option.value}

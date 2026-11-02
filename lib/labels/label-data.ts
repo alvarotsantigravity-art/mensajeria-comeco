@@ -26,6 +26,8 @@ export type LabelData = {
   qr: string | null; // contenido del QR (ID de la solicitud)
   notes: string;
   parcel: { index: number; total: number } | null;
+  /** "Bulto" (mensajería) o "Palé" (transporte). */
+  unit: string;
 };
 
 /** Opciones de la pantalla de etiquetas (vienen en la URL). */
@@ -55,6 +57,11 @@ export type LabelSource = {
   urgent: boolean;
   documentation: boolean;
   boxCount: number;
+  /** Transporte: el remitente es el origen de la carga, no la oficina. */
+  sender?: LabelSender;
+  unit?: string;
+  /** Observaciones propuestas al abrir la pantalla (OP, producto, código de entrega). */
+  defaultNotes?: string;
 };
 
 const flag = (v: "1" | "0" | undefined, fallback: boolean) => (v === undefined ? fallback : v === "1");
@@ -64,7 +71,8 @@ export function buildLabels(source: LabelSource, sender: LabelSender, options: L
   const documentation = flag(options.documentacion, source.documentation);
   const total = options.bultos ?? (documentation ? 1 : Math.max(1, source.boxCount));
   const base = {
-    sender,
+    sender: source.sender ?? sender,
+    unit: source.unit ?? "Bulto",
     recipient: source.recipient,
     urgent: flag(options.urgente, source.urgent),
     fragile: flag(options.fragil, false),

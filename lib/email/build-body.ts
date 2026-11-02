@@ -121,19 +121,89 @@ export function buildEmailBody(v: EmailContent): string {
   ].join("\n");
 }
 
-/** Plantilla configurable: {urgencia} · {empresa} · {fecha}. */
-export function buildSubject(template: string, v: EmailContent): string {
-  const urgency = v.urgency ? URGENCY_SHORT[v.urgency as Urgency] : "";
+const WEEKDAYS = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+
+function isoParts(isoDate: string) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(isoDate);
+  return match ? { y: Number(match[1]), m: Number(match[2]), d: Number(match[3]) } : null;
+}
+
+/** "2026-10-30" → "Viernes" (en UTC: el día no depende de la zona horaria). */
+export function weekdayName(isoDate: string): string {
+  const p = isoParts(isoDate);
+  return p ? WEEKDAYS[new Date(Date.UTC(p.y, p.m - 1, p.d)).getUTCDay()] : "";
+}
+
+/** "2026-10-30" → "30-10-26". */
+export function formatShortDate(isoDate: string): string {
+  const p = isoParts(isoDate);
+  return p ? `${String(p.d).padStart(2, "0")}-${String(p.m).padStart(2, "0")}-${String(p.y % 100).padStart(2, "0")}` : "";
+}
+
+/** "2026-06-29" → "29-6". */
+export function formatDayMonth(isoDate: string): string {
+  const p = isoParts(isoDate);
+  return p ? `${p.d}-${p.m}` : "";
+}
+
+/** "08:00" → "8:00". */
+export function formatTime(value: string | undefined): string {
+  const match = /^(\d{2}):(\d{2})$/.exec((value ?? "").trim());
+  return match ? `${Number(match[1])}:${match[2]}` : "";
+}
+
+/** Empresa, dirección, CP, ciudad y (PROVINCIA) en una línea, sin huecos. */
+export function placeLine(company?: string, address?: string, postalCode?: string, city?: string, province?: string): string {
+  const c = (s?: string) => (s ?? "").trim();
+  const region = c(province) && c(province).toLowerCase() !== c(city).toLowerCase() ? `(${c(province).toUpperCase()})` : "";
+  return [c(company), c(address), [c(postalCode), c(city)].filter(Boolean).join(" "), region].filter(Boolean).join(" ");
+}
+
+export type SubjectContent = EmailContent & Partial<Omit<RequestFormValues, keyof EmailContent>>;
+
+function subjectFields(v: SubjectContent, carrierName = ""): Record<string, string> {
+  const s = (value?: string) => (value ?? "").trim();
+  const pickupDate = s(v.pickup_date);
+  const deliveryDate = s(v.delivery_date);
+  return {
+    urgencia: v.urgency ? URGENCY_SHORT[v.urgency as Urgency] : "",
+    empresa: s(v.dest_company),
+    fecha: formatRequestDate(v.request_date),
+    proveedor: carrierName,
+    op: s(v.op),
+    producto: s(v.product),
+    origen: s(v.pickup_company).toUpperCase(),
+    origen_completo: placeLine(v.pickup_company, v.pickup_address, v.pickup_postal_code, v.pickup_city, v.pickup_province),
+    destino: s(v.dest_company).toUpperCase(),
+    destino_completo: placeLine(v.dest_company, v.dest_address, v.dest_postal_code, v.dest_city),
+    dia_recogida: pickupDate ? `${weekdayName(pickupDate)} ${formatShortDate(pickupDate)}`.toUpperCase() : "",
+    hora_recogida: formatTime(v.pickup_time),
+    recogida_dm: formatDayMonth(pickupDate),
+    dia_entrega: deliveryDate ? `${weekdayName(deliveryDate)} ${formatShortDate(deliveryDate)}`.toUpperCase() : "",
+    hora_entrega: formatTime(v.delivery_time),
+    entrega_dm: formatDayMonth(deliveryDate),
+    palets: s(v.pallets),
+  };
+}
+
+/** Marcadores que admite la plantilla del asunto (pantalla de proveedores). */
+export const SUBJECT_PLACEHOLDERS = Object.keys(subjectFields({} as SubjectContent));
+
+/**
+ * Plantilla configurable: {urgencia} · {empresa} · {fecha}, {op}, {origen}…
+ * Un tramo entre [corchetes] desaparece si alguno de sus marcadores está vacío.
+ */
+export function buildSubject(template: string, v: SubjectContent, carrierName = ""): string {
+  const fields = subjectFields(v, carrierName);
+  const fill = (part: string) => part.replace(/\{(\w+)\}/g, (m, key: string) => (key in fields ? fields[key] : m));
+  const withOptional = template.replace(/\[([^\]]*)\]/g, (_, inner: string) => {
+    const keys = [...inner.matchAll(/\{(\w+)\}/g)].map((m) => m[1]);
+    return keys.every((k) => !(k in fields) || fields[k]) ? inner : "";
+  });
   // Los tramos que quedan vacíos (p.ej. sin urgencia aún) se quitan con su separador.
-  return template
+  return withOptional
     .split("·")
-    .map((part) =>
-      part
-        .replaceAll("{urgencia}", urgency)
-        .replaceAll("{empresa}", v.dest_company.trim())
-        .replaceAll("{fecha}", formatRequestDate(v.request_date))
-        .trim(),
-    )
+    .map((part) => fill(part).replace(/\s+/g, " ").trim())
     .filter(Boolean)
     .join(" · ");
 }

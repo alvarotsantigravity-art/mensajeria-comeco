@@ -11,6 +11,7 @@ export type HistoryFilters = {
   q: string;
   status: Status | null;
   urgency: Urgency | null;
+  carrier: string | null;
   requester: string | null;
   recipient: string | null;
   from: string | null;
@@ -25,11 +26,13 @@ const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
 export function parseHistoryFilters(params: Record<string, string | string[] | undefined>): HistoryFilters {
   const status = one(params.estado);
   const urgency = one(params.urgencia);
+  const carrier = one(params.proveedor);
   const page = Number.parseInt(one(params.pagina) ?? "1", 10);
   return {
     q: (one(params.q) ?? "").trim().slice(0, 100),
     status: STATUSES.includes(status as Status) ? (status as Status) : null,
     urgency: URGENCIES.includes(urgency as Urgency) ? (urgency as Urgency) : null,
+    carrier: carrier && /^[a-z0-9-]{2,30}$/.test(carrier) ? carrier : null,
     requester: isUuid(one(params.solicitante)) ? one(params.solicitante)! : null,
     recipient: isUuid(one(params.destinatario)) ? one(params.destinatario)! : null,
     from: isDate(one(params.desde)) ? one(params.desde)! : null,
@@ -55,10 +58,13 @@ export type HistoryRow = Pick<
   | "box_count"
   | "status"
   | "sent_at"
+  | "carrier"
+  | "op"
+  | "product"
 >;
 
 const LIST_COLUMNS =
-  "id, ref, request_date, requester_id, requester_name, concept, dest_company, dest_city, urgency, scope, transport, shipment_type, box_count, status, sent_at";
+  "id, ref, request_date, requester_id, requester_name, concept, dest_company, dest_city, urgency, scope, transport, shipment_type, box_count, status, sent_at, carrier, op, product";
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
 
@@ -67,6 +73,7 @@ function historyQuery(supabase: Supabase, filters: HistoryFilters, columns: stri
   let query = supabase.from("shipment_requests").select(columns, { count: "exact" });
   if (filters.status) query = query.eq("status", filters.status);
   if (filters.urgency) query = query.eq("urgency", filters.urgency);
+  if (filters.carrier) query = query.eq("carrier", filters.carrier);
   if (filters.requester) query = query.eq("requester_id", filters.requester);
   if (filters.recipient) query = query.eq("recipient_id", filters.recipient);
   if (filters.from) query = query.gte("request_date", filters.from);
@@ -76,7 +83,7 @@ function historyQuery(supabase: Supabase, filters: HistoryFilters, columns: stri
     const term = filters.q.replace(/[,()*%\\]/g, " ").trim();
     if (term) {
       query = query.or(
-        ["ref", "dest_company", "dest_city", "concept", "requester_name", "dest_contact"]
+        ["ref", "dest_company", "dest_city", "concept", "requester_name", "dest_contact", "op", "product", "pickup_company"]
           .map((column) => `${column}.ilike.*${term}*`)
           .join(","),
       );

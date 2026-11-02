@@ -9,7 +9,15 @@ import { findRecipients, type RecipientOption } from "@/app/(app)/libreta/action
  * Campo "Destinatario" (§5.2): autocompletado sobre la libreta compartida,
  * tolerante a tildes y errores. Vacío → favoritos y recientes.
  */
-export function RecipientCombobox({ onSelect, disabled }: { onSelect: (r: RecipientOption) => void; disabled?: boolean }) {
+export function RecipientCombobox({
+  onSelect,
+  disabled,
+  label = "Destinatario de la libreta",
+}: {
+  onSelect: (r: RecipientOption) => void;
+  disabled?: boolean;
+  label?: string;
+}) {
   const id = useId();
   const listId = `${id}-list`;
   const [query, setQuery] = useState("");
@@ -46,7 +54,7 @@ export function RecipientCombobox({ onSelect, disabled }: { onSelect: (r: Recipi
   return (
     <div className="relative">
       <label htmlFor={id} className="mb-2 block text-sm font-medium">
-        Destinatario de la libreta
+        {label}
       </label>
       <div className="relative">
         <BookUser className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted" aria-hidden />

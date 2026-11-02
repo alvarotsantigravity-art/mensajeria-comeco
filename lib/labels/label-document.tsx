@@ -113,7 +113,7 @@ function Label({ label, format, qr }: { label: LabelData; format: LabelFormat; q
         </View>
         {label.parcel ? (
           <Text style={{ fontSize: pt(11), fontFamily: "Helvetica-Bold" }}>
-            Bulto {label.parcel.index}/{label.parcel.total}
+            {label.unit} {label.parcel.index}/{label.parcel.total}
           </Text>
         ) : null}
         {/* eslint-disable-next-line jsx-a11y/alt-text -- react-pdf Image no admite alt */}
