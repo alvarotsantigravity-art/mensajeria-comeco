@@ -5,7 +5,6 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/auth/dal";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { isAllowedEmail } from "@/lib/env";
 import { createUserSchema, type FormState } from "@/lib/validation/auth";
 
 const PATH = "/configuracion/usuarios";
@@ -22,10 +21,6 @@ export async function createUser(_prev: FormState, formData: FormData): Promise<
   const parsed = createUserSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { errors: z.flattenError(parsed.error).fieldErrors };
   const { email, full_name } = parsed.data;
-
-  if (!isAllowedEmail(email)) {
-    return { errors: { email: ["Solo se admiten cuentas @comecografico.com."] } };
-  }
 
   const password = tempPassword();
   const { error } = await createAdminClient().auth.admin.createUser({

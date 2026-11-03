@@ -16,7 +16,7 @@ export function LoginForm({ next, inactive, expired = false }: { next: string; i
     <form action={action} className="grid gap-5" noValidate>
       <div className="grid gap-1">
         <h2 className="text-xl font-semibold">Entrar</h2>
-        <p className="text-sm text-muted">Usa tu cuenta @comecografico.com.</p>
+        <p className="text-sm text-muted">Usa tu email y contraseña.</p>
       </div>
 
       {inactive ? <Alert tone="error">Tu cuenta está desactivada. Habla con el administrador.</Alert> : null}

@@ -44,7 +44,7 @@ export function CreateUserForm() {
     <Card className="grid gap-5">
       <div className="grid gap-1">
         <h3 className="text-lg font-semibold">Nuevo usuario</h3>
-        <p className="text-sm text-muted">Solo cuentas @comecografico.com.</p>
+        <p className="text-sm text-muted">Se admite cualquier dominio de email.</p>
       </div>
       <form action={action} className="grid gap-4" noValidate>
         {state.message && !state.ok ? <Alert tone="error">{state.message}</Alert> : null}

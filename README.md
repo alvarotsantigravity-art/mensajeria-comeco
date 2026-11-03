@@ -59,7 +59,6 @@ gratuitos (Vercel Hobby + Supabase Free).
    |---|---|
    | `NEXT_PUBLIC_SUPABASE_URL` · `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase → Project Settings → API |
    | `SUPABASE_SERVICE_ROLE_KEY` | Solo servidor. Marca *Sensitive* |
-   | `ALLOWED_EMAIL_DOMAINS` | `comecografico.com` |
    | `NEXT_PUBLIC_APP_URL` | `https://<app>.vercel.app` |
    | `TAVILY_API_KEY` · `GEMINI_API_KEY` · `GROQ_API_KEY` | Buscador. Marca *Sensitive* |
    | `GEMINI_MODEL` · `GROQ_MODEL` | Opcionales (por defecto `gemini-3.8-flash` y `openai/gpt-oss-120b`) |
@@ -123,7 +122,7 @@ Calcados del modelo de COMECO INTEGRA S.L.U. (sin logotipo), uno por solicitud y
 - Email y contraseña. **La app no envía emails** (sin SMTP ni DNS).
 - El admin da de alta a los compañeros en **Configuración → Usuarios** con una contraseña
   temporal y se la comunica en persona. En el primer acceso se obliga a cambiarla.
-- Solo se admiten cuentas `@comecografico.com` (se valida en el servidor y en la base de datos).
+- Se admiten cuentas de cualquier dominio de email.
 - ¿Contraseña olvidada? El admin la restablece desde la misma pantalla.
 
 ## Base de datos

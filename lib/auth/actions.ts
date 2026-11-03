@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { isAllowedEmail, isSupabaseConfigured } from "@/lib/env";
+import { isSupabaseConfigured } from "@/lib/env";
 import { requireUser } from "@/lib/auth/dal";
 import { loginSchema, newPasswordSchema, type FormState } from "@/lib/validation/auth";
 
@@ -17,9 +17,6 @@ export async function signIn(_prev: FormState, formData: FormData): Promise<Form
   if (!parsed.success) return { errors: z.flattenError(parsed.error).fieldErrors };
 
   const { email, password } = parsed.data;
-  if (!isAllowedEmail(email)) {
-    return { errors: { email: ["Solo se admiten cuentas @comecografico.com."] } };
-  }
 
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword({ email, password });
