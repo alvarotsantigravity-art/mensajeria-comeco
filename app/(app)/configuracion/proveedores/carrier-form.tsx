@@ -64,7 +64,7 @@ export function CarrierForm({ carrier, placeholders }: { carrier?: Carrier; plac
           </select>
         </Field>
 
-        <Field label="Para" htmlFor={id("email_to")} error={e("email_to")} hint="Separados por comas. Nunca @comecografico.com." className="sm:col-span-6">
+        <Field label="Para" htmlFor={id("email_to")} error={e("email_to")} hint="Separados por comas." className="sm:col-span-6">
           <Input id={id("email_to")} name="email_to" className="font-mono" defaultValue={carrier?.emailTo.join(", ")} />
         </Field>
         <Field label="CC por defecto" htmlFor={id("email_cc")} error={e("email_cc")} hint="Opcional. Se puede cambiar en cada solicitud." className="sm:col-span-6">

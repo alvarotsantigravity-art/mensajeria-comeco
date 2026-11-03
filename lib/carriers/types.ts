@@ -58,6 +58,3 @@ export function toCarrier(row: CarrierRow): Carrier {
     sortOrder: row.sort_order,
   };
 }
-
-/** Correos que nunca van en Para/CC de un proveedor: los nuestros. */
-export const OWN_DOMAIN = /@comecografico\.com$/i;

@@ -102,7 +102,7 @@ Cada solicitud va a un proveedor (tabla `carriers`, editable en **Configuración
 | RAFA VENTO | Transporte | Lista corta («Buenos días Rafa,») | `RVE` |
 | TIPSA | Transporte + tipo de servicio (10 H urgente / 14 H) y código de cliente 09211 | Tabla, con cabecera de cliente | `TIP` |
 
-- Para, CC y asunto son de cada proveedor. **Nunca** se admiten correos `@comecografico.com` (lo comprueban la pantalla y la base de datos).
+- Para, CC y asunto son de cada proveedor.
 - El asunto admite marcadores (`{op}`, `{producto}`, `{origen}`, `{dia_recogida}`, …); un tramo entre `[corchetes]` se quita si alguno de sus marcadores está vacío.
 - La referencia lleva el prefijo del proveedor, con su propia numeración por año. Un borrador que cambia de proveedor recibe una referencia nueva.
 - Los códigos de BOYACA se guardan en la libreta por dirección (Rotomadrid = 178) y se rellenan al elegirla; el de entrega se escribe a mano la primera vez y se recuerda al enviar.

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/auth/dal";
 import { createClient } from "@/lib/supabase/server";
-import { EMAIL_LAYOUTS, FORM_KINDS, OWN_DOMAIN } from "@/lib/carriers/types";
+import { EMAIL_LAYOUTS, FORM_KINDS } from "@/lib/carriers/types";
 
 export type CarrierFormState = { ok?: boolean; message?: string; errors?: Record<string, string[] | undefined> };
 
@@ -21,8 +21,7 @@ const emailList = (min: number) =>
       z
         .array(z.email("Hay un email no válido."))
         .min(min, "Indica al menos un email.")
-        .max(20, "Demasiados emails.")
-        .refine((list) => !list.some((e) => OWN_DOMAIN.test(e)), "No incluyas correos @comecografico.com."),
+        .max(20, "Demasiados emails."),
     );
 
 const carrierSchema = z
