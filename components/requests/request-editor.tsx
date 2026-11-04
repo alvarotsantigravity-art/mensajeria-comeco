@@ -143,7 +143,7 @@ export function RequestEditor({
     .filter((c) => c.active || c.slug === values.carrier)
     .map((c) => ({ value: c.slug, label: c.name, hint: c.active ? `${c.refPrefix} · ${c.emailTo[0] ?? ""}` : "Desactivado" }));
 
-  // Vídeo de la caja: avanza con los bloques completos y sale de escena al enviar. En transporte, una caja.
+  // Vídeo de la caja: avanza con los bloques completos y sale de escena al completarlos. En transporte, una caja.
   const boxCount = isTransport || values.shipment_type !== "caja" ? 1 : Math.max(1, Number(values.box_count) || 1);
   const variant = useMemo<PackageVariant>(() => ({ boxCount }), [boxCount]);
 
@@ -523,7 +523,7 @@ export function RequestEditor({
   );
 
   return (
-    <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.82fr)] lg:gap-14">
+    <div className="grid gap-10 lg:grid-cols-2 lg:gap-14">
       <form
         noValidate
         onSubmit={(event) => {
@@ -798,8 +798,8 @@ export function RequestEditor({
 
       <aside className="grid gap-6 self-start lg:sticky lg:top-24" aria-label="Progreso">
         <ProgressSteps progress={progress} sent={sent} titles={isTransport ? TRANSPORT_TITLES : undefined} />
-        {/* Sin tarjeta ni pestañas: el vídeo de la caja se funde con el fondo de la app. */}
-        <PackageStage stage={sent ? 5 : progress.stage} variant={variant} className="mx-auto w-full max-w-md" />
+        {/* La caja es la protagonista: a todo el ancho de la columna. */}
+        <PackageStage stage={sent ? 5 : progress.stage} variant={variant} className="w-full" />
       </aside>
 
       {/* Fuera del <form>: los eventos del portal suben por el árbol de React. */}
