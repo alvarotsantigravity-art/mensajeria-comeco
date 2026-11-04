@@ -4,7 +4,7 @@
 export const URGENCIES = ["urgente", "estandar", "economico"] as const;
 export const SCOPES = ["local", "nacional", "internacional"] as const;
 export const TRANSPORTS = ["moto", "furgoneta", "camion"] as const;
-export const SHIPMENT_TYPES = ["documentacion", "caja"] as const;
+export const SHIPMENT_TYPES = ["documentacion", "caja", "palets"] as const;
 export const STATUSES = ["borrador", "enviada", "entregada", "cancelada"] as const;
 
 export type Urgency = (typeof URGENCIES)[number];
@@ -32,6 +32,7 @@ export const TRANSPORT_EMAIL: Record<Transport, string> = {
 export const SHIPMENT_TYPE_EMAIL: Record<ShipmentType, string> = {
   documentacion: "Documentación",
   caja: "Caja",
+  palets: "Palets",
 };
 
 /** Etiqueta corta para el asunto y la interfaz. */

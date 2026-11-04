@@ -50,6 +50,7 @@ const transportOptions = TRANSPORTS.map((value) => ({ value, label: TRANSPORT_EM
 const shipmentTypeOptions = [
   { value: "documentacion", label: SHIPMENT_TYPE_EMAIL.documentacion, hint: "Sobre o carpeta" },
   { value: "caja", label: SHIPMENT_TYPE_EMAIL.caja, hint: "Indica cuántas" },
+  { value: "palets", label: SHIPMENT_TYPE_EMAIL.palets, hint: "Indica cuántos" },
 ];
 
 const hasContent = (v: RequestFormValues) =>
@@ -143,7 +144,7 @@ export function RequestEditor({
     .map((c) => ({ value: c.slug, label: c.name, hint: c.active ? `${c.refPrefix} · ${c.emailTo[0] ?? ""}` : "Desactivado" }));
 
   // Vídeo de la caja: avanza con los bloques completos y sale de escena al enviar. En transporte, una caja.
-  const boxCount = isTransport ? 1 : Math.max(1, Number(values.box_count) || 1);
+  const boxCount = isTransport || values.shipment_type !== "caja" ? 1 : Math.max(1, Number(values.box_count) || 1);
   const variant = useMemo<PackageVariant>(() => ({ boxCount }), [boxCount]);
 
   /** Guardados en serie: nunca dos a la vez (el primero crea la fila y fija el id). */
@@ -499,6 +500,28 @@ export function RequestEditor({
     </>
   );
 
+  const countField = (name: "envelope_count" | "box_count", label: string) => (
+    <Field label={label} htmlFor={name} error={err(name)}>
+      <Input id={name} type="number" min={1} max={999} inputMode="numeric" className="font-mono" {...register(name)} aria-invalid={Boolean(err(name)) || undefined} />
+    </Field>
+  );
+
+  /** Tipo de envío y su contador: el mismo en todos los proveedores. */
+  const shipmentBlock = (
+    <div className="grid gap-5 sm:grid-cols-[1fr_10rem] sm:items-start">
+      <ChoiceGroup
+        legend="Tipo de envío"
+        name="shipment_type"
+        options={shipmentTypeOptions}
+        registration={register("shipment_type")}
+        error={err("shipment_type")}
+      />
+      {values.shipment_type === "documentacion" ? countField("envelope_count", "Nº de sobres") : null}
+      {values.shipment_type === "caja" ? countField("box_count", "Nº de cajas") : null}
+      {values.shipment_type === "palets" ? textField("pallets", "Nº de palets", { hint: "Ej.: 15 aprox" }) : null}
+    </div>
+  );
+
   return (
     <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.82fr)] lg:gap-14">
       <form
@@ -601,20 +624,7 @@ export function RequestEditor({
               <Field label="Descripción del envío" htmlFor="description" error={err("description")} hint="Qué se envía, contenido, peso estimado o instrucciones especiales.">
                 <Textarea id="description" rows={4} {...register("description")} aria-invalid={Boolean(err("description")) || undefined} />
               </Field>
-              <div className="grid gap-5 sm:grid-cols-[1fr_10rem] sm:items-start">
-                <ChoiceGroup
-                  legend="Tipo de envío"
-                  name="shipment_type"
-                  options={shipmentTypeOptions}
-                  registration={register("shipment_type")}
-                  error={err("shipment_type")}
-                />
-                {values.shipment_type === "caja" ? (
-                  <Field label="Nº de cajas" htmlFor="box_count" error={err("box_count")}>
-                    <Input id="box_count" type="number" min={1} max={999} inputMode="numeric" className="font-mono" {...register("box_count")} aria-invalid={Boolean(err("box_count")) || undefined} />
-                  </Field>
-                ) : null}
-              </div>
+              {shipmentBlock}
             </div>
             {pickupBlock}
           </section>
@@ -735,7 +745,7 @@ export function RequestEditor({
                     optionsClassName="sm:grid-cols-2"
                   />
                 ) : null}
-                {textField("pallets", "Nº de palés", { className: "sm:col-span-3", hint: "Ej.: 15 palets aprox" })}
+                <div className="sm:col-span-6">{shipmentBlock}</div>
                 {textField("weight_kg", "Peso total (kg)", { className: "sm:col-span-3", hint: "Ej.: 24000kg" })}
                 <Field label="Observaciones" htmlFor="observations" error={err("observations")} className="sm:col-span-6">
                   <Textarea id="observations" rows={3} {...register("observations")} aria-invalid={Boolean(err("observations")) || undefined} />
@@ -871,12 +881,12 @@ const SEARCH_FIELD_MAP: Partial<Record<CandidateField, DestField>> = {
 const FIELD_ORDER: (keyof RequestFormValues)[] = [
   "carrier",
   "request_date", "requester_name", "requester_phone", "requester_email", "company", "ceco",
-  "op", "product", "concept", "description", "shipment_type", "box_count",
+  "op", "product", "concept", "description", "shipment_type", "envelope_count", "box_count", "pallets",
   "pickup_code", "pickup_company", "pickup_address", "pickup_postal_code", "pickup_city", "pickup_province",
   "pickup_contact", "pickup_phone", "pickup_date", "pickup_time", "pickup_notes",
   "delivery_code", "dest_company", "dest_address", "dest_postal_code", "dest_city", "dest_province", "dest_country",
   "dest_contact", "dest_phone", "delivery_date", "delivery_time", "delivery_notes",
-  "urgency", "scope", "transport", "carrier_service", "pallets", "weight_kg", "observations", "email_cc",
+  "urgency", "scope", "transport", "carrier_service", "weight_kg", "observations", "email_cc",
 ];
 
 function SaveIndicator({ state }: { state: SaveState }) {

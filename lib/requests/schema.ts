@@ -4,7 +4,7 @@ import { SCOPES, SHIPMENT_TYPES, TRANSPORTS, URGENCIES } from "./options";
 import { isSpain } from "./provinces";
 
 // Esquemas compartidos cliente/servidor (§3). En el formulario todo son strings;
-// los radios sin elegir valen "" y box_count se guarda como texto hasta enviarse.
+// los radios sin elegir valen "" y los contadores se guardan como texto hasta enviarse.
 
 const text = (max = 200) => z.string().trim().max(max, `Máximo ${max} caracteres.`);
 const required = (message: string, max = 200) => text(max).min(1, message);
@@ -30,11 +30,18 @@ export const requesterShape = {
   ceco: z.string().trim().regex(/^\d{6,12}$/, "El CECO son solo dígitos (6–12)."),
 };
 
+/** Tipo de envío y su contador: lo tienen todos los proveedores. */
+export const shipmentShape = {
+  shipment_type: choice(SHIPMENT_TYPES, "Elige documentación, caja o palets."),
+  envelope_count: z.string().trim(),
+  box_count: z.string().trim(),
+  pallets: text(40),
+};
+
 export const petitionShape = {
   concept: required("Indica el concepto."),
   description: required("Describe qué se envía.", 2000),
-  shipment_type: choice(SHIPMENT_TYPES, "Elige documentación o caja."),
-  box_count: z.string().trim(),
+  ...shipmentShape,
 };
 
 export const destinationShape = {
@@ -62,9 +69,18 @@ export const extrasShape = {
 
 type Ctx = z.RefinementCtx;
 
-function checkBoxCount(v: { shipment_type?: string; box_count: string }, ctx: Ctx) {
-  if (v.shipment_type === "caja" && !/^[1-9]\d{0,2}$/.test(v.box_count)) {
+const COUNT = /^[1-9]\d{0,2}$/;
+
+function checkShipmentCount(v: { shipment_type?: string; envelope_count: string; box_count: string; pallets: string }, ctx: Ctx) {
+  if (v.shipment_type === "documentacion" && !COUNT.test(v.envelope_count)) {
+    ctx.addIssue({ code: "custom", path: ["envelope_count"], message: "Indica el nº de sobres (1 o más)." });
+  }
+  if (v.shipment_type === "caja" && !COUNT.test(v.box_count)) {
     ctx.addIssue({ code: "custom", path: ["box_count"], message: "Indica el nº de cajas (1 o más)." });
+  }
+  // Texto libre: en transporte se pide a menudo «15 palets aprox».
+  if (v.shipment_type === "palets" && !v.pallets) {
+    ctx.addIssue({ code: "custom", path: ["pallets"], message: "Indica el nº de palets." });
   }
 }
 
@@ -97,7 +113,7 @@ export const pickupShape = {
 export const blockSchemas = {
   requester: z.object(requesterShape),
   petition: z.object({ ...petitionShape, ...pickupShape }).superRefine((v, ctx) => {
-    checkBoxCount(v, ctx);
+    checkShipmentCount(v, ctx);
     checkOptionalPostalCode("pickup")(v, ctx);
   }),
   destination: z.object(destinationShape).superRefine(checkPostalCode),
@@ -111,13 +127,13 @@ export const BLOCK_ORDER: BlockKey[] = ["requester", "petition", "destination", 
 export const requestSchema = z
   .object({ ...requesterShape, ...petitionShape, ...pickupShape, ...destinationShape, ...serviceShape, ...extrasShape })
   .superRefine((v, ctx) => {
-    checkBoxCount(v, ctx);
+    checkShipmentCount(v, ctx);
     checkOptionalPostalCode("pickup")(v, ctx);
     checkPostalCode(v, ctx);
   });
 
 // ---------------------------------------------------------------------------
-// Formulario de transporte (BOYACA, RAFA VENTO, TIPSA…): recogida + entrega + palés.
+// Formulario de transporte (BOYACA, RAFA VENTO, TIPSA…): recogida + entrega + carga.
 // Mismos bloques 01–04 que la mensajería para el progreso y la escena 3D.
 // ---------------------------------------------------------------------------
 
@@ -144,7 +160,7 @@ export const deliveryShape = {
 };
 
 const transportServiceShape = (serviceOptions: string[]) => ({
-  pallets: required("Indica el nº de palés.", 40),
+  ...shipmentShape,
   weight_kg: text(40),
   carrier_service: serviceOptions.length
     ? z.string().refine((v) => serviceOptions.includes(v), "Elige el tipo de servicio.")
@@ -186,11 +202,12 @@ export function schemasFor(formKind: string, serviceOptions: string[] = []): Req
       requester: z.object(requesterShape),
       petition: z.object(cargoShape).superRefine(pickupCp),
       destination: z.object(deliveryShape).superRefine(destCp),
-      service: z.object(service),
+      service: z.object(service).superRefine(checkShipmentCount),
     },
     full: z
       .object({ ...requesterShape, ...cargoShape, ...deliveryShape, ...service, ...extrasShape })
       .superRefine((v, ctx) => {
+        checkShipmentCount(v, ctx);
         pickupCp(v, ctx);
         destCp(v, ctx);
       }),
@@ -211,6 +228,7 @@ export const draftSchema = z.object({
   concept: text(),
   description: text(2000),
   shipment_type: z.enum([...SHIPMENT_TYPES, ""]),
+  envelope_count: z.string().trim().regex(/^\d{0,3}$/).catch(""),
   box_count: z.string().trim().regex(/^\d{0,3}$/).catch(""),
   dest_company: text(),
   dest_address: text(),

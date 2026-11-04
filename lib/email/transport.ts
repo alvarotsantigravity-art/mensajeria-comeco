@@ -36,6 +36,13 @@ function opening(v: RequestFormValues, carrier: Carrier, now: Date): string[] {
 
 const closing = (v: RequestFormValues) => ["Gracias", "Un saludo", s(v.requester_name)].filter(Boolean);
 
+/** Fila del contador según el tipo de envío (sin tipo, palés: lo de siempre en transporte). */
+function shipmentRow(v: RequestFormValues): Row {
+  if (v.shipment_type === "documentacion") return ["Nº de Sobre(s)", s(v.envelope_count)];
+  if (v.shipment_type === "caja") return ["Nº de Caja(s)", s(v.box_count)];
+  return ["Nº de Palé(s)", s(v.pallets)];
+}
+
 /** Secciones de la tabla de transporte (las comparten el texto y el HTML). */
 export function transportSections(v: RequestFormValues, carrier: Carrier): Section[] {
   const codes = carrier.usesCodes;
@@ -65,7 +72,7 @@ export function transportSections(v: RequestFormValues, carrier: Carrier): Secti
     ["Teléfono", s(v.dest_phone)],
     ["Fecha Entrega", longDate(v.delivery_date, "", false)],
     ["Hora de Entrega", formatTime(v.delivery_time)],
-    ["Nº de Palé(s)", s(v.pallets)],
+    shipmentRow(v),
     ["Peso total Kg", s(v.weight_kg)],
     ["Otros", s(v.delivery_notes)],
   ];
@@ -93,10 +100,12 @@ function tableText(v: RequestFormValues, carrier: Carrier, now: Date): string {
   return [...opening(v, carrier, now), ...body, "", ...closing(v)].join("\n");
 }
 
-function pallets(value: string): string {
-  const p = s(value);
-  if (!p) return "";
-  return /pal[eé]/i.test(p) ? `Total ${p}` : `Total ${p} ${p === "1" ? "palet" : "palets"}`;
+function shipmentTotal(v: RequestFormValues): string {
+  const count = (value: string, one: string, many: string) => (s(value) ? `Total ${s(value)} ${s(value) === "1" ? one : many}` : "");
+  if (v.shipment_type === "documentacion") return count(v.envelope_count, "sobre", "sobres");
+  if (v.shipment_type === "caja") return count(v.box_count, "caja", "cajas");
+  const p = s(v.pallets);
+  return /pal[eé]/i.test(p) ? `Total ${p}` : count(p, "palet", "palets");
 }
 
 /** Puntos de la lista corta (RAFA VENTO). */
@@ -112,7 +121,7 @@ export function listItems(v: RequestFormValues): string[] {
     s(v.dest_company) ? `Entrega directa en ${where(v.dest_company, v.dest_city)}` : "",
     s(v.delivery_date) && v.delivery_date !== v.pickup_date ? `Entrega: ${weekdayName(v.delivery_date)} ${formatShortDate(v.delivery_date)}` : "",
     s(v.delivery_notes),
-    pallets(v.pallets),
+    shipmentTotal(v),
     s(v.weight_kg) ? `Peso total: ${s(v.weight_kg)}` : "",
     s(v.observations),
   ].filter(Boolean);

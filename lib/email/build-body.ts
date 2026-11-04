@@ -2,6 +2,7 @@ import {
   SCOPE_EMAIL,
   SCOPES,
   SHIPMENT_TYPE_EMAIL,
+  SHIPMENT_TYPES,
   TRANSPORT_EMAIL,
   TRANSPORTS,
   URGENCIES,
@@ -37,7 +38,9 @@ export type EmailContent = Pick<
   | "scope"
   | "transport"
   | "shipment_type"
+  | "envelope_count"
   | "box_count"
+  | "pallets"
   | "pickup_company"
   | "pickup_address"
   | "pickup_postal_code"
@@ -77,13 +80,16 @@ const mark = (checked: boolean) => (checked ? "[X]" : "[ ]");
 
 /** Filas de la tabla de servicio: [urgencia, ámbito, transporte, tipo de envío]. */
 export function serviceRows(v: EmailContent): string[][] {
-  const isBox = v.shipment_type === "caja";
-  const boxes = isBox && v.box_count.trim() ? v.box_count.trim() : "__";
-  const typeCells = [
-    `${mark(v.shipment_type === "documentacion")} ${SHIPMENT_TYPE_EMAIL.documentacion}`,
-    `${mark(isBox)} ${SHIPMENT_TYPE_EMAIL.caja}`,
-    `${mark(isBox)} Nº Cajas: ${boxes}`,
-  ];
+  const counts = {
+    documentacion: ["Sobres", v.envelope_count],
+    caja: ["Cajas", v.box_count],
+    palets: ["Palets", v.pallets],
+  };
+  const typeCells = SHIPMENT_TYPES.map((type) => {
+    const checked = v.shipment_type === type;
+    const [unit, count] = counts[type];
+    return `${mark(checked)} ${SHIPMENT_TYPE_EMAIL[type]} · Nº ${unit}: ${(checked && count.trim()) || "__"}`;
+  });
   return [0, 1, 2].map((i) => [
     `${mark(v.urgency === URGENCIES[i])} ${URGENCY_EMAIL[URGENCIES[i]]}`,
     `${mark(v.scope === SCOPES[i])} ${SCOPE_EMAIL[SCOPES[i]]}`,

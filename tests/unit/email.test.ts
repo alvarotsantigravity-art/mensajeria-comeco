@@ -26,6 +26,7 @@ const values: RequestFormValues = {
   concept: "Pruebas de color",
   description: "2 pliegos en tubo, 1 kg aprox.",
   shipment_type: "caja",
+  envelope_count: "",
   box_count: "3",
   dest_company: "Notaría Ejemplo",
   dest_address: "Calle de Alcalá, 100",
@@ -74,19 +75,25 @@ describe("cuerpo del correo (plantilla §3)", () => {
         "Persona de contacto: Lucía Gómez    Teléfono: 910 000 001",
         "",
         "PRIORIDAD, ALCANCE Y TIPO DE SERVICIO",
-        "| URGENCIA (Plazo)               | ÁMBITO GEOGRÁFICO | TIPO TRANSPORTE | TIPO ENVÍO        |",
-        "| [X] Urgente (menos de 4 horas) | [X] Local/Urbano  | [X] Moto        | [ ] Documentación |",
-        "| [ ] Estándar (en el día)       | [ ] Nacional      | [ ] Furgoneta   | [X] Caja          |",
-        "| [ ] Económico (día siguiente)  | [ ] Internacional | [ ] Camión      | [X] Nº Cajas: 3   |",
+        "| URGENCIA (Plazo)               | ÁMBITO GEOGRÁFICO | TIPO TRANSPORTE | TIPO ENVÍO                        |",
+        "| [X] Urgente (menos de 4 horas) | [X] Local/Urbano  | [X] Moto        | [ ] Documentación · Nº Sobres: __ |",
+        "| [ ] Estándar (en el día)       | [ ] Nacional      | [ ] Furgoneta   | [X] Caja · Nº Cajas: 3            |",
+        "| [ ] Económico (día siguiente)  | [ ] Internacional | [ ] Camión      | [ ] Palets · Nº Palets: __        |",
       ].join("\n"),
     );
   });
 
-  test("documentación: sin cajas marcadas y Nº Cajas vacío", () => {
-    const body = buildEmailBody({ ...values, shipment_type: "documentacion", box_count: "" });
-    expect(body).toContain("[X] Documentación");
-    expect(body).toContain("[ ] Caja");
-    expect(body).toContain("[ ] Nº Cajas: __");
+  test("documentación: con Nº Sobres, sin cajas ni palets marcados", () => {
+    const body = buildEmailBody({ ...values, shipment_type: "documentacion", envelope_count: "2", box_count: "" });
+    expect(body).toContain("[X] Documentación · Nº Sobres: 2");
+    expect(body).toContain("[ ] Caja · Nº Cajas: __");
+    expect(body).toContain("[ ] Palets · Nº Palets: __");
+  });
+
+  test("palets: con Nº Palets", () => {
+    const body = buildEmailBody({ ...values, shipment_type: "palets", box_count: "", pallets: "4" });
+    expect(body).toContain("[X] Palets · Nº Palets: 4");
+    expect(body).toContain("[ ] Caja · Nº Cajas: __");
   });
 
   test("destino internacional muestra el país", () => {
@@ -140,6 +147,14 @@ describe("validación y sugerencias", () => {
     expect(result.success).toBe(false);
     const paths = result.error!.issues.map((i) => i.path.join("."));
     expect(paths).toEqual(expect.arrayContaining(["box_count", "dest_postal_code"]));
+  });
+
+  test("documentación exige nº de sobres y palets nº de palets", () => {
+    const paths = (v: RequestFormValues) => requestSchema.safeParse(v).error?.issues.map((i) => i.path.join("."));
+    expect(paths({ ...values, shipment_type: "documentacion" })).toEqual(["envelope_count"]);
+    expect(paths({ ...values, shipment_type: "palets" })).toEqual(["pallets"]);
+    expect(requestSchema.safeParse({ ...values, shipment_type: "documentacion", envelope_count: "1" }).success).toBe(true);
+    expect(requestSchema.safeParse({ ...values, shipment_type: "palets", pallets: "2" }).success).toBe(true);
   });
 
   test("CP extranjero libre", () => {

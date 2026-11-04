@@ -26,7 +26,7 @@ export type LabelData = {
   qr: string | null; // contenido del QR (ID de la solicitud)
   notes: string;
   parcel: { index: number; total: number } | null;
-  /** "Bulto" (mensajería) o "Palé" (transporte). */
+  /** "Bulto" (cajas), "Sobre" (documentación) o "Palé". */
   unit: string;
 };
 
@@ -66,10 +66,10 @@ export type LabelSource = {
 
 const flag = (v: "1" | "0" | undefined, fallback: boolean) => (v === undefined ? fallback : v === "1");
 
-/** N cajas → N etiquetas "Bulto i/N". La documentación va en una sola. */
+/** N cajas → N etiquetas "Bulto i/N"; N sobres → "Sobre i/N". Marcar a mano la documentación deja una sola. */
 export function buildLabels(source: LabelSource, sender: LabelSender, options: LabelOptions): LabelData[] {
   const documentation = flag(options.documentacion, source.documentation);
-  const total = options.bultos ?? (documentation ? 1 : Math.max(1, source.boxCount));
+  const total = options.bultos ?? (documentation && !source.documentation ? 1 : Math.max(1, source.boxCount));
   const base = {
     sender: source.sender ?? sender,
     unit: source.unit ?? "Bulto",

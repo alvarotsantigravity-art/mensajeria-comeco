@@ -6,6 +6,8 @@ export type CarrierRow = Database["public"]["Tables"]["carriers"]["Row"];
 
 export const FORM_KINDS = ["mensajeria", "transporte"] as const;
 export const EMAIL_LAYOUTS = ["mensajeria", "tabla", "lista"] as const;
+/** Copia con la que nace un proveedor nuevo (se puede cambiar en su ficha). */
+export const DEFAULT_CARRIER_CC = ["atubio@comecografico.com", "jjimenezm@vocento.com", "emdefrutos@comecografico.com"];
 export type FormKind = (typeof FORM_KINDS)[number];
 export type EmailLayout = (typeof EMAIL_LAYOUTS)[number];
 

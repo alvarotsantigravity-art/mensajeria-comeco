@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
 import { Input, Textarea } from "@/components/ui/input";
-import { EMAIL_LAYOUT_LABEL, EMAIL_LAYOUTS, FORM_KIND_LABEL, FORM_KINDS, type Carrier } from "@/lib/carriers/types";
+import { DEFAULT_CARRIER_CC, EMAIL_LAYOUT_LABEL, EMAIL_LAYOUTS, FORM_KIND_LABEL, FORM_KINDS, type Carrier } from "@/lib/carriers/types";
 import { saveCarrier, type CarrierFormState } from "./actions";
 
 const selectClass = "h-10 w-full rounded-md border border-line bg-surface px-3 text-sm outline-none focus:border-accent";
@@ -68,7 +68,7 @@ export function CarrierForm({ carrier, placeholders }: { carrier?: Carrier; plac
           <Input id={id("email_to")} name="email_to" className="font-mono" defaultValue={carrier?.emailTo.join(", ")} />
         </Field>
         <Field label="CC por defecto" htmlFor={id("email_cc")} error={e("email_cc")} hint="Opcional. Se puede cambiar en cada solicitud." className="sm:col-span-6">
-          <Input id={id("email_cc")} name="email_cc" className="font-mono" defaultValue={carrier?.emailCc.join(", ")} />
+          <Input id={id("email_cc")} name="email_cc" className="font-mono" defaultValue={(carrier?.emailCc ?? DEFAULT_CARRIER_CC).join(", ")} />
         </Field>
         <Field
           label="Asunto"

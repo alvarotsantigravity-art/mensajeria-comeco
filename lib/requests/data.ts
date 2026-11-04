@@ -76,6 +76,7 @@ function baseRequestValues(profile: Profile, settings: AppSettings, carrier?: Ca
     concept: "",
     description: "",
     shipment_type: "",
+    envelope_count: "",
     box_count: "",
     dest_company: "",
     dest_address: "",
@@ -105,7 +106,9 @@ export function rowToValues(row: ShipmentRequestRow): RequestFormValues {
     ceco: row.ceco,
     concept: row.concept ?? "",
     description: row.description ?? "",
-    shipment_type: row.shipment_type ?? "",
+    // Las solicitudes de transporte anteriores al selector solo tienen el nº de palés.
+    shipment_type: row.shipment_type ?? (row.pallets ? "palets" : ""),
+    envelope_count: row.envelope_count?.toString() ?? "",
     box_count: row.box_count?.toString() ?? "",
     dest_company: row.dest_company ?? "",
     dest_address: row.dest_address ?? "",

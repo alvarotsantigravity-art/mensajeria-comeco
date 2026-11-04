@@ -27,7 +27,7 @@ export async function getLabelSource(target: LabelTarget): Promise<(LabelSource 
     if (!r) return null;
     const carrier = await getCarrier(r.carrier);
     const transport = carrier?.formKind === "transporte";
-    // Remitente = origen de la carga (todos los proveedores). Transporte: una etiqueta por palé.
+    // Remitente = origen de la carga (todos los proveedores).
     const sender = r.pickup_company
       ? {
           sender: {
@@ -40,12 +40,16 @@ export async function getLabelSource(target: LabelTarget): Promise<(LabelSource 
           },
         }
       : {};
+    // Una etiqueta por sobre, caja o palé. Transporte sin tipo: solicitudes anteriores al selector, con palés.
     const pallets = Number.parseInt(r.pallets ?? "", 10);
+    const load =
+      r.shipment_type === "documentacion"
+        ? { unit: "Sobre", count: r.envelope_count ?? 1 }
+        : r.shipment_type === "palets" || (transport && !r.shipment_type)
+          ? { unit: "Palé", count: Number.isFinite(pallets) ? pallets : 1 }
+          : { unit: "Bulto", count: r.box_count ?? 1 };
     const transportExtras = transport
       ? {
-          unit: "Palé",
-          boxCount: Math.min(50, Math.max(1, Number.isFinite(pallets) ? pallets : 1)),
-          documentation: false,
           urgent: /urgente/i.test(r.carrier_service ?? ""),
           defaultNotes: [r.op, r.product, r.delivery_code ? `Cód. entrega ${r.delivery_code}` : "", carrier?.name]
             .filter(Boolean)
@@ -70,7 +74,8 @@ export async function getLabelSource(target: LabelTarget): Promise<(LabelSource 
       qr: r.id,
       urgent: r.urgency === "urgente",
       documentation: r.shipment_type === "documentacion",
-      boxCount: r.shipment_type === "caja" ? Math.max(1, r.box_count ?? 1) : 1,
+      unit: load.unit,
+      boxCount: Math.min(50, Math.max(1, load.count)),
       ...sender,
       ...transportExtras,
     };

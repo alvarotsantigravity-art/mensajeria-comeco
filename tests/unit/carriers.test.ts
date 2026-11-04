@@ -50,7 +50,8 @@ const values: RequestFormValues = {
   ceco: "2690600250",
   concept: "",
   description: "",
-  shipment_type: "",
+  shipment_type: "palets",
+  envelope_count: "",
   box_count: "",
   urgency: "",
   scope: "",
@@ -159,6 +160,15 @@ describe("cuerpo de transporte", () => {
     expect(email.html).toContain("<ul");
   });
 
+  test("el contador sigue al tipo de envío", () => {
+    const docs = { ...values, shipment_type: "documentacion", envelope_count: "2", pallets: "" };
+    expect(composeEmail(docs, boyaca).text).toMatch(/Nº de Sobre\(s\):\s+2/);
+    expect(listItems(docs)).toContain("Total 2 sobres");
+    const boxes = { ...values, shipment_type: "caja", box_count: "1", pallets: "" };
+    expect(composeEmail(boxes, boyaca).text).toMatch(/Nº de Caja\(s\):\s+1/);
+    expect(listItems(boxes)).toContain("Total 1 caja");
+  });
+
   test("el HTML escapa los datos", () => {
     expect(composeEmail({ ...values, product: "<b>x</b>" }, boyaca).html).toContain("&lt;b&gt;x&lt;/b&gt;");
   });
@@ -185,6 +195,14 @@ describe("validación de transporte", () => {
     expect(result.success).toBe(false);
     const paths = result.error!.issues.map((i) => i.path[0]);
     expect(paths).toEqual(expect.arrayContaining(["op", "pickup_company", "pickup_date", "pallets"]));
+  });
+
+  test("el tipo de envío es obligatorio y admite sobres y cajas", () => {
+    const schema = schemasFor("transporte").full;
+    expect(schema.safeParse({ ...values, shipment_type: "" }).success).toBe(false);
+    expect(schema.safeParse({ ...values, shipment_type: "documentacion", pallets: "" }).success).toBe(false);
+    expect(schema.safeParse({ ...values, shipment_type: "documentacion", pallets: "", envelope_count: "3" }).success).toBe(true);
+    expect(schema.safeParse({ ...values, shipment_type: "caja", pallets: "", box_count: "3" }).success).toBe(true);
   });
 
   test("CP de entrega opcional, pero de 5 dígitos si se escribe", () => {

@@ -34,7 +34,7 @@ export function LabelStudio({
   // Palés: etiqueta grande (A5) por defecto.
   const [format, setFormat] = useState<LabelFormat>(source.unit === "Palé" ? "2" : source.documentation ? "4" : source.boxCount > 2 ? "8" : "4");
   const [start, setStart] = useState(1);
-  const [parcels, setParcels] = useState(source.documentation ? 1 : source.boxCount);
+  const [parcels, setParcels] = useState(source.boxCount);
   const [urgent, setUrgent] = useState(source.urgent);
   const [fragile, setFragile] = useState(false);
   const [documentation, setDocumentation] = useState(source.documentation);
@@ -190,7 +190,11 @@ export function LabelStudio({
               ))}
             </select>
           </Field>
-          <Field label={source.unit === "Palé" ? "Palés" : "Bultos"} htmlFor="bultos" hint={documentation ? "Documentación: suele ser 1" : undefined}>
+          <Field
+            label={source.unit === "Palé" ? "Palés" : source.unit === "Sobre" ? "Sobres" : "Bultos"}
+            htmlFor="bultos"
+            hint={documentation && source.unit !== "Sobre" ? "Documentación: suele ser 1" : undefined}
+          >
             <Input
               id="bultos"
               type="number"

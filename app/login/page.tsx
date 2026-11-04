@@ -7,7 +7,7 @@ export const metadata: Metadata = { title: "Entrar" };
 
 export default function LoginPage({ searchParams }: PageProps<"/login">) {
   return (
-    <AuthShell eyebrow="Comeco Gráfico · Mensajería" title={<>Envía en segundos.</>} showcase>
+    <AuthShell eyebrow="Comeco Gráfico · Mensajería" title={<>Envía en segundos.</>}>
       <Suspense>
         <LoginParams searchParams={searchParams} />
       </Suspense>

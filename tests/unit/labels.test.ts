@@ -55,6 +55,12 @@ describe("buildLabels", () => {
     expect(labels[0]).toMatchObject({ parcel: null, urgent: false, fragile: true, notes: "Recepción" });
   });
 
+  it("N sobres → N etiquetas numeradas Sobre i/N", () => {
+    const labels = buildLabels({ ...source, documentation: true, unit: "Sobre" }, sender, parseLabelOptions({}));
+    expect(labels).toHaveLength(3);
+    expect(labels[1]).toMatchObject({ unit: "Sobre", documentation: true, parcel: { index: 2, total: 3 } });
+  });
+
   it("ignora opciones inválidas", () => {
     expect(parseLabelOptions({ formato: "9", inicio: "-2", bultos: "abc" })).toMatchObject({ formato: "4", inicio: 1, bultos: undefined });
   });

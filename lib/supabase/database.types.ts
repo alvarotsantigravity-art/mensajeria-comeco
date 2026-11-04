@@ -489,6 +489,7 @@ export type Database = {
           dest_province: string | null
           email_body: string | null
           email_cc: string[]
+          envelope_count: number | null
           email_subject: string | null
           id: string
           observations: string | null
@@ -546,6 +547,7 @@ export type Database = {
           dest_province?: string | null
           email_body?: string | null
           email_cc?: string[]
+          envelope_count?: number | null
           email_subject?: string | null
           id?: string
           observations?: string | null
@@ -603,6 +605,7 @@ export type Database = {
           dest_province?: string | null
           email_body?: string | null
           email_cc?: string[]
+          envelope_count?: number | null
           email_subject?: string | null
           id?: string
           observations?: string | null

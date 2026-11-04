@@ -50,7 +50,7 @@ export async function getDeliveryNote(requestId: string): Promise<DeliveryNoteSo
         deliveryDate: r.delivery_date,
         requestDate: r.request_date,
         pallets: r.pallets,
-        boxCount: r.shipment_type === "caja" ? r.box_count : null,
+        boxCount: r.shipment_type === "caja" ? r.box_count : r.shipment_type === "documentacion" ? r.envelope_count : null,
       });
 
   const region = r.dest_province && r.dest_province.trim().toLowerCase() !== (r.dest_city ?? "").trim().toLowerCase() ? ` (${r.dest_province})` : "";

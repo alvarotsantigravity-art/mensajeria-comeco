@@ -63,6 +63,7 @@ const COLUMNS: [string, (r: ShipmentRequestRow) => string | number | null][] = [
   ["Peso (kg)", (r) => r.weight_kg],
   ["Servicio", (r) => r.carrier_service],
   ["Observaciones", (r) => r.observations],
+  ["Sobres", (r) => r.envelope_count],
 ];
 
 /** carrierNames: slug → nombre del proveedor (sin él, sale el slug). */

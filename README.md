@@ -13,7 +13,7 @@ imprimir etiquetas. Especificación completa: [docs/PROMPT_app_mensajeria.md](do
 | 1. Base + design system | ✅ Hecha |
 | 2. Base de datos | ✅ Hecha (RLS probadas: `npm run test:rls`) |
 | 3. Formulario + correo | ✅ Hecha |
-| 4. Caja animada | ✅ Vídeo de la caja (`public/caja/caja.mp4`) que avanza con el formulario en el editor y en bucle en la pantalla de acceso |
+| 4. Caja animada | ✅ Vídeo de la caja (`public/caja/caja.mp4`) que avanza con el formulario en el editor |
 | 5. Libreta + historial | ✅ Libreta (buscar, favoritos, fusionar), historial con filtros y CSV, repetir envío, plantillas, autocompletado |
 | 6. Buscador IA | ✅ En producción (Tavily + Gemini → Groq, caché 30 días, cuota diaria, fuentes citadas). Probado en real con Groq |
 | 7. Etiquetas | ✅ PDF A4 (1, 2, 4 y 8 por hoja), bultos N/N, posición inicial, QR, distintivos, calibración en mm. Falta la prueba en una hoja Apli real |

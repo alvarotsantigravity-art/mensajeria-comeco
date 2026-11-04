@@ -9,6 +9,7 @@ export const TEMPLATE_FIELDS = [
   "concept",
   "description",
   "shipment_type",
+  "envelope_count",
   "box_count",
   "recipient_id",
   "dest_company",
